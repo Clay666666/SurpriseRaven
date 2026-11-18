@@ -40,4 +40,4 @@ Slay the Spire 2/
 
 ## 开发与素材
 
-源码构建需要 0.111.0 游戏基线和开发用素材输入。运行玩家包只需上面的游戏与工坊前置。项目保留模板的 MIT 许可证。PCK 内的第三方音画按项目维护者确认的范围随 Mod 发行。[源码构建](docs/source-handoff.md) · [版本记录](CHANGELOG.md) · [代码许可](LICENSE) · [素材与第三方声明](THIRD_PARTY_NOTICES.md)
+源码构建需要 0.111.0 游戏基线和开发用素材输入。运行玩家包只需上面的游戏与工坊前置。项目保留模板的 MIT 许可证。PCK 内的第三方音画按项目维护者确认的范围随 Mod 发行。[源码构建](docs/source-handoff.md) · [代码许可](LICENSE) · [素材与第三方声明](THIRD_PARTY_NOTICES.md)

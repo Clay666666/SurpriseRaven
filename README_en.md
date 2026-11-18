@@ -40,4 +40,4 @@ Slay the Spire 2/
 
 ## Development and credits
 
-Building the mod requires a local 0.111.0 game installation and media inputs. The player ZIP only needs the supported game and Workshop dependency described above. The source retains the scaffold's MIT license. Third-party media is distributed inside the PCK as confirmed by the project maintainer. [Source build guide (Chinese)](docs/source-handoff.md) · [Changelog (Chinese)](CHANGELOG.md) · [Code license](LICENSE) · [Media and third-party notices](THIRD_PARTY_NOTICES.md)
+Building the mod requires a local 0.111.0 game installation and media inputs. The player ZIP only needs the supported game and Workshop dependency described above. The source retains the scaffold's MIT license. Third-party media is distributed inside the PCK as confirmed by the project maintainer. [Source build guide (Chinese)](docs/source-handoff.md) · [Code license](LICENSE) · [Media and third-party notices](THIRD_PARTY_NOTICES.md)
