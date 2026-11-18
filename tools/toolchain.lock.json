@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "resolved_on": "2026-11-09",
+  "downloads": [
+    {
+      "id": "dotnet-sdk",
+      "version": "10.0.403",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-win-x64.zip",
+      "algorithm": "SHA512",
+      "hash": "7a114c318fa7f1d9822991b534b2814d0e78386ceda816b371f5141acefe741d87ccb606ede06cadac8f9ac5070e32b708a67bbd1619ff5e5a7858a27874ef48",
+      "destination": "tools/dotnet",
+      "marker": "sdk/10.0.403/dotnet.dll",
+      "archive_prefix": ""
+    },
+    {
+      "id": "dotnet-runtime8",
+      "version": "8.0.33",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Runtime/8.0.33/dotnet-runtime-8.0.33-win-x64.zip",
+      "algorithm": "SHA512",
+      "hash": "ceb56fa91c15aa7c465db8cd42ee4e978589c58885cd1f164f8fcde7231ea15c3cfc0bcddb2e6b452238b3687a3e2bcb3683349b8b92a7172e03154ed280be67",
+      "destination": "tools/dotnet",
+      "marker": "shared/Microsoft.NETCore.App/8.0.33/coreclr.dll",
+      "archive_prefix": "",
+      "include_prefixes": [
+        "shared/Microsoft.NETCore.App/8.0.33/",
+        "host/fxr/8.0.33/"
+      ]
+    },
+    {
+      "id": "dotnet-desktop10",
+      "version": "10.0.14",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.14/windowsdesktop-runtime-10.0.14-win-x64.zip",
+      "algorithm": "SHA512",
+      "hash": "3214913702264452ac4b283b6fb2f6c14ab748cea36c7561608245c4a7d8cc10436a160032038865d039a016eab4975f65f1ae906de7615953fbec760f764ac4",
+      "destination": "tools/dotnet",
+      "marker": "shared/Microsoft.WindowsDesktop.App/10.0.14/PresentationFramework.dll",
+      "archive_prefix": ""
+    },
+    {
+      "id": "godot",
+      "version": "4.5.1-stable",
+      "url": "https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_mono_win64.zip",
+      "algorithm": "SHA256",
+      "hash": "8ce2346c05c8a9674ab267b4a0a7e2764a6e47da730713aa932c2a6db774a239",
+      "destination": "tools/godot",
+      "marker": "Godot_v4.5.1-stable_mono_win64.exe",
+      "archive_prefix": "Godot_v4.5.1-stable_mono_win64/"
+    },
+    {
+      "id": "ilspy",
+      "version": "10.0.0.8282-preview2",
+      "url": "https://github.com/icsharpcode/ILSpy/releases/download/v10.0-preview2/ILSpy_binaries_10.0.0.8282-preview2-x64.zip",
+      "algorithm": "SHA256",
+      "hash": "fb360b165886e8af52668c46c3bab3c62fbe7b985506392a431ecc43d7760297",
+      "destination": "tools/ilspy",
+      "marker": "ILSpy.exe",
+      "archive_prefix": ""
+    },
+    {
+      "id": "uv",
+      "version": "0.13.7",
+      "url": "https://github.com/astral-sh/uv/releases/download/0.13.7/uv-x86_64-pc-windows-msvc.zip",
+      "algorithm": "SHA256",
+      "hash": "0cdc5b38fe5a8168ed6a25814f5ba43c21d313dd3187314fccb37b7cec46e021",
+      "destination": "tools/uv",
+      "marker": "uv.exe",
+      "archive_prefix": ""
+    }
+  ],
+  "repositories": [
+    {
+      "id": "ILSpy-Mcp",
+      "url": "https://github.com/bivex/ILSpy-Mcp.git",
+      "commit": "58b01c118dd08e85e8205c8b3a49d63e68282ef3"
+    },
+    {
+      "id": "STS2MCP",
+      "url": "https://github.com/Gennadiyev/STS2MCP.git",
+      "commit": "55e064850a68f3b4cde7e5fd525bf9b2dec4e885"
+    },
+    {
+      "id": "STS2MenuControl",
+      "url": "https://github.com/L4ntern0/STS2-MenuControl.git",
+      "commit": "a37f56786ecd2fcbcb8de391cf18142de00ee292"
+    }
+  ]
+}

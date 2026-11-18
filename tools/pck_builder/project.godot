@@ -1,0 +1,8 @@
+; Headless project used only to pack the SurpriseRaven manifest and resources.
+config_version=5
+
+[application]
+config/name="SurpriseRaven PCK Builder"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"

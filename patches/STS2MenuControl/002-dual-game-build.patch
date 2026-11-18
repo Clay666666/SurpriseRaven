@@ -1,0 +1,36 @@
+diff --git a/STS2MenuControl.csproj b/STS2MenuControl.csproj
+index 03a6484..f87c539 100644
+--- a/STS2MenuControl.csproj
++++ b/STS2MenuControl.csproj
+@@ -4,21 +4,28 @@
+     <OutputType>Library</OutputType>
+     <Nullable>enable</Nullable>
+     <LangVersion>12.0</LangVersion>
++    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
++    <Sts2ApiTarget Condition="'$(Sts2ApiTarget)' == ''">0.111.0</Sts2ApiTarget>
+     <STS2GameDir Condition="'$(STS2GameDir)' == ''">D:\SteamLibrary\steamapps\common\Slay the Spire 2</STS2GameDir>
++    <STS2GameDataDir Condition="'$(STS2GameDataDir)' == ''">$(STS2GameDir)\data_sts2_windows_x86_64</STS2GameDataDir>
+   </PropertyGroup>
+ 
+   <ItemGroup>
+     <Reference Include="sts2">
+-      <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\sts2.dll</HintPath>
++      <HintPath>$(STS2GameDataDir)\sts2.dll</HintPath>
+       <Private>false</Private>
+     </Reference>
+     <Reference Include="GodotSharp">
+-      <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\GodotSharp.dll</HintPath>
++      <HintPath>$(STS2GameDataDir)\GodotSharp.dll</HintPath>
+       <Private>false</Private>
+     </Reference>
+     <Reference Include="0Harmony">
+-      <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\0Harmony.dll</HintPath>
++      <HintPath>$(STS2GameDataDir)\0Harmony.dll</HintPath>
+       <Private>false</Private>
+     </Reference>
+   </ItemGroup>
++  <Target Name="ValidateSts2ApiTarget" BeforeTargets="CoreCompile">
++    <Error Condition="'$(Sts2ApiTarget)' != '0.111.0' and '$(Sts2ApiTarget)' != '0.113.0'"
++           Text="Unsupported Sts2ApiTarget. Use 0.111.0 or 0.113.0." />
++  </Target>
+ </Project>

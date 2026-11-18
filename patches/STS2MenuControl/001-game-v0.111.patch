@@ -1,0 +1,26 @@
+diff --git a/MenuActionService.cs b/MenuActionService.cs
+index 60b8624..28914a5 100644
+--- a/MenuActionService.cs
++++ b/MenuActionService.cs
+@@ -340,7 +340,7 @@ internal static class MenuActionService
+             }
+             result["lobby"] = new Dictionary<string, object>
+             {
+-                ["max_players"] = lobby.MaxPlayers,
++                ["max_players"] = HarmonyLib.AccessTools.Field(lobby.GetType(), "_maxPlayers").GetValue(lobby)!,
+                 ["ascension"] = lobby.Ascension,
+                 ["game_mode"] = lobby.GameMode.ToString(),
+                 ["net_type"] = lobby.NetService.Type.ToString(),
+diff --git a/MenuStateService.cs b/MenuStateService.cs
+index ce5f6bf..7c09166 100644
+--- a/MenuStateService.cs
++++ b/MenuStateService.cs
+@@ -36,7 +36,7 @@ internal static class MenuStateService
+                 var lobby = cs.Lobby;
+                 result["is_multiplayer"] = lobby.NetService.Type.ToString() != "Singleplayer";
+                 result["lobby_type"] = lobby.NetService.Type.ToString().ToLowerInvariant();
+-                result["max_players"] = lobby.MaxPlayers;
++                result["max_players"] = HarmonyLib.AccessTools.Field(lobby.GetType(), "_maxPlayers").GetValue(lobby)!;
+                 result["ascension"] = lobby.Ascension;
+                 result["net_type"] = lobby.NetService.Type.ToString();
+                 var players = new List<Dictionary<string, object>>();

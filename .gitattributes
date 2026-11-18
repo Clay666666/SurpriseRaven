@@ -1,0 +1,34 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force batch files to use CRLF
+*.bat text eol=crlf
+
+# Force PowerShell scripts to use LF
+*.ps1 text eol=lf
+
+# Force C# files to use LF
+*.cs text eol=lf
+
+# Force JSON files to use LF
+*.json text eol=lf
+
+# Force Markdown files to use LF
+*.md text eol=lf
+
+# Keep portable tooling/configuration consistent across Windows checkouts.
+*.py text eol=lf
+*.toml text eol=lf
+*.toml.example text eol=lf
+*.csproj text eol=lf
+*.gd text eol=lf
+*.godot text eol=lf
+
+# Unified diff context lines require their leading space, including blank lines.
+*.patch text eol=lf whitespace=-blank-at-eol
+
+# Keep binary files unchanged
+*.dll binary
+*.exe binary
+*.pck binary
+*.pdb binary

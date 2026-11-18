@@ -1,0 +1,94 @@
+diff --git a/McpMod.Actions.cs b/McpMod.Actions.cs
+index 2553f3f..6e7c8e9 100644
+--- a/McpMod.Actions.cs
++++ b/McpMod.Actions.cs
+@@ -362,8 +362,7 @@ public static partial class McpMod
+             var merchUI = NMerchantRoom.Instance;
+             if (merchUI?.Inventory != null && !merchUI.Inventory.IsOpen)
+                 merchUI.OpenInventory();
+-            // v0.107 split the merchant into per-player inventories; take the local one.
+-            inventory = merchantRoom.GetLocalInventory();
++            inventory = GetLocalMerchantInventory(merchantRoom);
+         }
+         else if (player.RunState.CurrentRoom is EventRoom eventRoom
+                  && eventRoom.CanonicalEvent is FakeMerchant
+@@ -413,8 +412,8 @@ public static partial class McpMod
+         if (!entry.EnoughGold)
+             return Error($"Not enough gold (need {entry.Cost}, have {player.Gold})");
+ 
+-        // Fire-and-forget purchase (same path as AutoSlay)
+-        _ = entry.OnTryPurchaseWrapper(inventory);
++        // Preserve the target game's purchase path, including 113 synchronization.
++        _ = PurchaseMerchantEntry(entry, inventory);
+ 
+         return new Dictionary<string, object?>
+         {
+diff --git a/McpMod.MerchantCompatibility.cs b/McpMod.MerchantCompatibility.cs
+new file mode 100644
+index 0000000..1553f98
+--- /dev/null
++++ b/McpMod.MerchantCompatibility.cs
+@@ -0,0 +1,27 @@
++using System.Threading.Tasks;
++using MegaCrit.Sts2.Core.Entities.Merchant;
++using MegaCrit.Sts2.Core.Rooms;
++using MegaCrit.Sts2.Core.Runs;
++
++namespace STS2_MCP;
++
++public static partial class McpMod
++{
++    private static MerchantInventory? GetLocalMerchantInventory(MerchantRoom room)
++    {
++#if STS2_API_113
++        return RunManager.Instance.MerchantSynchronizer.GetLocalInventory();
++#else
++        return room.GetLocalInventory();
++#endif
++    }
++
++    private static Task<bool> PurchaseMerchantEntry(MerchantEntry entry, MerchantInventory inventory)
++    {
++#if STS2_API_113
++        return RunManager.Instance.MerchantSynchronizer.PurchaseLocalEntry(entry);
++#else
++        return entry.OnTryPurchaseWrapper(inventory);
++#endif
++    }
++}
+diff --git a/McpMod.StateBuilder.cs b/McpMod.StateBuilder.cs
+index 734dba7..c356853 100644
+--- a/McpMod.StateBuilder.cs
++++ b/McpMod.StateBuilder.cs
+@@ -1564,7 +1564,7 @@ public static partial class McpMod
+     {
+         var state = new Dictionary<string, object?>();
+ 
+-        var inventory = merchantRoom.GetLocalInventory();
++        var inventory = GetLocalMerchantInventory(merchantRoom);
+         if (inventory == null)
+         {
+             state["items"] = new List<Dictionary<string, object?>>();
+diff --git a/STS2_MCP.csproj b/STS2_MCP.csproj
+index 6c390c9..97ce01f 100644
+--- a/STS2_MCP.csproj
++++ b/STS2_MCP.csproj
+@@ -4,6 +4,9 @@
+     <OutputType>Library</OutputType>
+     <Nullable>enable</Nullable>
+     <LangVersion>12.0</LangVersion>
++    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
++    <Sts2ApiTarget Condition="'$(Sts2ApiTarget)' == ''">0.111.0</Sts2ApiTarget>
++    <DefineConstants Condition="'$(Sts2ApiTarget)' == '0.113.0'">$(DefineConstants);STS2_API_113</DefineConstants>
+     <!-- Set your STS2 install path here, or pass as: dotnet build -p:STS2GameDir="..." -->
+     <STS2GameDir Condition="'$(STS2GameDir)' == ''">D:\SteamLibrary\steamapps\common\Slay the Spire 2</STS2GameDir>
+     <STS2GameDataDir Condition="'$(STS2GameDataDir)' == '' and '$(OS)' == 'Windows_NT'">$(STS2GameDir)/data_sts2_windows_x86_64</STS2GameDataDir>
+@@ -27,4 +30,8 @@
+       <Private>false</Private>
+     </Reference>
+   </ItemGroup>
++  <Target Name="ValidateSts2ApiTarget" BeforeTargets="CoreCompile">
++    <Error Condition="'$(Sts2ApiTarget)' != '0.111.0' and '$(Sts2ApiTarget)' != '0.113.0'"
++           Text="Unsupported Sts2ApiTarget. Use 0.111.0 or 0.113.0." />
++  </Target>
+ </Project>

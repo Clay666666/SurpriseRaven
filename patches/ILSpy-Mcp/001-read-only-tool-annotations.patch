@@ -1,0 +1,104 @@
+diff --git a/Transport/Mcp/Tools/AnalyzeAssemblyTool.cs b/Transport/Mcp/Tools/AnalyzeAssemblyTool.cs
+index 45c4fce..0fbb13c 100644
+--- a/Transport/Mcp/Tools/AnalyzeAssemblyTool.cs
++++ b/Transport/Mcp/Tools/AnalyzeAssemblyTool.cs
+@@ -21,7 +21,7 @@ public sealed class AnalyzeAssemblyTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "analyze_assembly")]
++    [McpServerTool(Name = "analyze_assembly", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you just installed a NuGet library and need to understand its overall architecture and entry points before writing code. Provides high-level overview of main namespaces, key public types, and design patterns. Start here for unfamiliar libraries.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/DecompileMethodTool.cs b/Transport/Mcp/Tools/DecompileMethodTool.cs
+index 2d4d7b1..262db84 100644
+--- a/Transport/Mcp/Tools/DecompileMethodTool.cs
++++ b/Transport/Mcp/Tools/DecompileMethodTool.cs
+@@ -21,7 +21,7 @@ public sealed class DecompileMethodTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "decompile_method")]
++    [McpServerTool(Name = "decompile_method", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you need to call a specific library method but don't understand its parameters, behavior, or side effects. Analyzes the method's implementation to explain what it does, what arguments it expects, and how to use it correctly. Helpful for understanding undocumented APIs.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/DecompileTypeTool.cs b/Transport/Mcp/Tools/DecompileTypeTool.cs
+index 96098ff..e047d78 100644
+--- a/Transport/Mcp/Tools/DecompileTypeTool.cs
++++ b/Transport/Mcp/Tools/DecompileTypeTool.cs
+@@ -24,7 +24,7 @@ public sealed class DecompileTypeTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "decompile_type")]
++    [McpServerTool(Name = "decompile_type", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when writing code that needs to interact with a NuGet library type but you don't know its structure. Decompiles a class/interface/struct to understand what methods, properties, and constructors are available. Returns AI-analyzed insights about usage patterns, not raw source code.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/FindExtensionMethodsTool.cs b/Transport/Mcp/Tools/FindExtensionMethodsTool.cs
+index 3e34cf3..8d02a54 100644
+--- a/Transport/Mcp/Tools/FindExtensionMethodsTool.cs
++++ b/Transport/Mcp/Tools/FindExtensionMethodsTool.cs
+@@ -21,7 +21,7 @@ public sealed class FindExtensionMethodsTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "find_extension_methods")]
++    [McpServerTool(Name = "find_extension_methods", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you want to know what extension methods are available for a specific type. Extension methods add functionality to existing types and are often discovered through IntelliSense, but this tool helps you find them when exploring a library. Shows you additional methods you can call on instances of the type.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/FindTypeHierarchyTool.cs b/Transport/Mcp/Tools/FindTypeHierarchyTool.cs
+index 3e29957..82d71fc 100644
+--- a/Transport/Mcp/Tools/FindTypeHierarchyTool.cs
++++ b/Transport/Mcp/Tools/FindTypeHierarchyTool.cs
+@@ -21,7 +21,7 @@ public sealed class FindTypeHierarchyTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "find_type_hierarchy")]
++    [McpServerTool(Name = "find_type_hierarchy", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you need to understand inheritance relationships - what base classes a type extends, what interfaces it implements, or what types inherit from it. Essential for knowing valid cast operations, available polymorphic behaviors, and understanding the type's contract.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/GetTypeMembersTool.cs b/Transport/Mcp/Tools/GetTypeMembersTool.cs
+index b0580ec..9ef7b7a 100644
+--- a/Transport/Mcp/Tools/GetTypeMembersTool.cs
++++ b/Transport/Mcp/Tools/GetTypeMembersTool.cs
+@@ -21,7 +21,7 @@ public sealed class GetTypeMembersTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "get_type_members")]
++    [McpServerTool(Name = "get_type_members", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you know the class name but need to see what methods and properties you can call on it. Shows complete API surface (method signatures, properties, events) without implementation details. Faster than decompile_type when you just need to know 'what can I call?'")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/ListAssemblyTypesTool.cs b/Transport/Mcp/Tools/ListAssemblyTypesTool.cs
+index 71d6468..61b43b8 100644
+--- a/Transport/Mcp/Tools/ListAssemblyTypesTool.cs
++++ b/Transport/Mcp/Tools/ListAssemblyTypesTool.cs
+@@ -21,7 +21,7 @@ public sealed class ListAssemblyTypesTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "list_assembly_types")]
++    [McpServerTool(Name = "list_assembly_types", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you added a NuGet package but don't know what classes/types it provides. Lists all available types by namespace to help you discover what's available. Essential first step before using decompile_type to examine specific classes.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,
+diff --git a/Transport/Mcp/Tools/SearchMembersByNameTool.cs b/Transport/Mcp/Tools/SearchMembersByNameTool.cs
+index e039a74..e92972c 100644
+--- a/Transport/Mcp/Tools/SearchMembersByNameTool.cs
++++ b/Transport/Mcp/Tools/SearchMembersByNameTool.cs
+@@ -21,7 +21,7 @@ public sealed class SearchMembersByNameTool
+         _logger = logger;
+     }
+ 
+-    [McpServerTool(Name = "search_members_by_name")]
++    [McpServerTool(Name = "search_members_by_name", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+     [Description("Use this when you know what operation you want to perform (like 'Parse', 'Convert', 'Serialize') but don't know which type contains that method. Searches across all types in the assembly to find matching methods, properties, or fields. Helps discover API entry points.")]
+     public async Task<string> ExecuteAsync(
+         [Description("Path to the .NET assembly file")] string assemblyPath,

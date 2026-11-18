@@ -1,0 +1,32 @@
+{
+  "format": "raven-frontend-v1",
+  "volume": 0.6,
+  "reducedMotion": "auto",
+  "timings": {
+    "fadeIn": 0.35,
+    "igniteStagger": 0.12,
+    "offerFly": 0.45,
+    "crouch": 0.25,
+    "flyAway": 2.4,
+    "grabFraction": 0.42,
+    "away": 0.8,
+    "returnFly": 2.2,
+    "dropAt": 1.0,
+    "dropFall": 0.45,
+    "swallowExtinguishAt": 1.7,
+    "swallowVoiceAt": 2.0,
+    "swallowEnd": 4.2
+  },
+  "events": {
+    "entry": { "clips": ["voice.entry.11", "voice.entry.15", "voice.entry.16"], "chance": 0.5 },
+    "result.upgrade": { "clips": ["voice.upgrade"] },
+    "result.upgrade_sfx": { "clips": ["sfx.upgrade"] },
+    "result.bonus": { "clips": ["voice.bonus"] },
+    "reward.swap": { "clips": ["sfx.swap_reward"] },
+    "result.swap": { "clips": ["sfx.swap"] },
+    "result.downgrade": { "clips": ["voice.downgrade"] },
+    "result.swallow": { "clips": ["voice.swallow"] },
+    "candle.light": { "clips": ["sfx.candle_light.01", "sfx.candle_light.02", "sfx.candle_light.03", "sfx.candle_light.04", "sfx.candle_light.05", "sfx.candle_light.06"], "volume": 0.8 },
+    "candle.out": { "clips": ["sfx.candle_out.01", "sfx.candle_out.02", "sfx.candle_out.03", "sfx.candle_out.04", "sfx.candle_out.05", "sfx.candle_out.06"], "volume": 0.8 }
+  }
+}

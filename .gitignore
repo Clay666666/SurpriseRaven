@@ -1,0 +1,76 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.godot/
+**/__pycache__/
+*.pyc
+*.user
+*.suo
+
+# NuGet
+**/packages/
+**/*.nuget.props
+**/*.nuget.targets
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Temp files
+nul
+*.pck
+*.dll
+*.exe
+*.pdb
+
+# References (game DLLs - downloaded separately)
+references/
+
+# Local config
+.env
+.env.*
+!.env.example
+opencode.jsonc
+
+# Tool downloads (keep scripts and pck_builder)
+/tools/*
+!/tools/*.ps1
+!/tools/toolchain.lock.json
+!/tools/mcp_smoke.py
+!/tools/ritsulib_check.py
+!/tools/pck_builder/
+!/tools/pck_builder/**
+!/tools/api-compat/
+!/tools/api-compat/*.cs
+!/tools/api-compat/*.csproj
+!/tools/api-compat/*.md
+!/tools/api-compat/*.py
+!/tools/api-compat/*.ps1
+/tools/api-compat/**/bin/
+/tools/api-compat/**/obj/
+
+# STS2MenuControl (cloned from GitHub at install time)
+/tools/STS2MenuControl/
+
+# Cloned repositories
+/Modding-Tutorial/
+
+# Raven media is third-party and stays local; only the selection spec and frontend config are tracked
+/assets/raven/*
+!/assets/raven/raven-assets.json
+!/assets/raven/raven-frontend.json
+!/tools/stage-raven-assets.ps1
+
+# Local toolchain downloads, staging, reports and generated client configuration
+/artifacts/
+/dist/
+/.codex/config.toml
+/.codex/config.toml.before-scaffold
+/.codex/config.toml.tmp
+/.codex/config.toml.*
+!/.codex/config.toml.example

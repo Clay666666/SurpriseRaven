@@ -1,0 +1,30 @@
+# Generated locally by tools/configure-codex.ps1. Replace PROJECT_ROOT below
+# only when using this example manually. Keep the real config.toml local.
+mcp_optional_startup_grace_ms = 0
+
+[mcp_servers.ilspy]
+command = 'PROJECT_ROOT\tools\dotnet\dotnet.exe'
+args = ['PROJECT_ROOT\tools\ILSpy-Mcp\bin\Release\net8.0\ILSpy.Mcp.dll']
+cwd = 'PROJECT_ROOT\tools\ILSpy-Mcp\bin\Release\net8.0'
+enabled = true
+required = false
+startup_timeout_sec = 60
+tool_timeout_sec = 120
+
+[mcp_servers.ilspy.env]
+DOTNET_ROOT = 'PROJECT_ROOT\tools\dotnet'
+DOTNET_NOLOGO = '1'
+DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+
+[mcp_servers.sts2mcp]
+command = 'PROJECT_ROOT\tools\STS2MCP\mcp\.venv\Scripts\python.exe'
+args = ['-u', 'PROJECT_ROOT\tools\STS2MCP\mcp\server.py', '--no-trust-env']
+cwd = 'PROJECT_ROOT\tools\STS2MCP\mcp'
+enabled = true
+required = false
+startup_timeout_sec = 60
+tool_timeout_sec = 120
+
+[mcp_servers.sts2mcp.env]
+PYTHONUTF8 = '1'
+PYTHONUNBUFFERED = '1'
