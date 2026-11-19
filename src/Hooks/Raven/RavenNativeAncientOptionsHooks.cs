@@ -41,7 +41,7 @@ internal static partial class RavenNativeAncientOptionsHooks
             if (__instance.Owner is not { } player || (!FixtureApplies(player) && !RavenNativeAncientSelectionHooks.Applies(player))) return true;
             try
             {
-                var obtained = FixtureApplies(player) ? FixtureObtained! : RavenRelicHistoryHooks.GetObtainedRelicIds(player);
+                var obtained = FixtureApplies(player) ? FixtureObtained! : RavenRelicAvailabilityHooks.GetUnavailableRelicIds(player, includeLamp: true, exceptEvent: __instance);
                 // With no affected history, retain the native generator and RNG consumption exactly.
                 if (!__instance.AllPossibleOptions.Any(o => o.Relic is { } r && obtained.Contains(r.Id))) return true;
                 __result = Generate(__instance, obtained);

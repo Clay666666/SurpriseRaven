@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.RelicPools;
 using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace SurpriseRaven.Hooks.Raven;
 
@@ -11,8 +12,12 @@ namespace SurpriseRaven.Hooks.Raven;
 internal static class RavenPoolHooks
 {
     internal static List<RelicModel> CreateCandidates(Player player, RelicRarity rarity,
-        int count, Rng rng, string? excludeId = null)
+        int count, Rng rng, string? excludeId = null) => CreateCandidates(player, rarity, count, rng, out _, excludeId);
+
+    internal static List<RelicModel> CreateCandidates(Player player, RelicRarity rarity,
+        int count, Rng rng, out int excluded, string? excludeId = null, RunManager? manager = null)
     {
+        excluded = 0;
         if (count <= 0 || rarity is not (RelicRarity.Common or RelicRarity.Uncommon
                 or RelicRarity.Rare or RelicRarity.Ancient)) return [];
 
@@ -20,25 +25,36 @@ internal static class RavenPoolHooks
             ? UnlockedAncients(player).SelectMany(AncientRelics)
             : ModelDb.RelicPool<SharedRelicPool>().GetUnlockedRelics(player.UnlockState)
                 .Concat(player.Character.RelicPool.GetUnlockedRelics(player.UnlockState));
-        var unavailable = RavenRelicAvailabilityHooks.GetUnavailableRelicIds(player);
+        var unavailable = RavenRelicAvailabilityHooks.GetUnavailableRelicIds(player, manager);
         var pool = source.Where(r => r.Rarity == rarity && r.Id.ToString() != excludeId)
             .DistinctBy(r => r.Id).OrderBy(r => r.Id.ToString(), StringComparer.Ordinal).ToList();
+        excluded = pool.Count(relic => unavailable.Contains(relic.Id));
         return Draw(player, pool, count, rng, unavailable);
     }
 
     internal static (string? AncientId, List<RelicModel> Candidates) CreateAncientBonusCandidates(
-        Player player, Rng rng, string? excludeId = null)
+        Player player, Rng rng, string? excludeId = null) => CreateAncientBonusCandidates(player, rng, out _, excludeId);
+
+    internal static (string? AncientId, List<RelicModel> Candidates) CreateAncientBonusCandidates(
+        Player player, Rng rng, out int excluded, string? excludeId = null)
     {
         var unavailable = RavenRelicAvailabilityHooks.GetUnavailableRelicIds(player);
-        var groups = UnlockedAncients(player).OrderBy(ancient => ancient.Id.ToString(), StringComparer.Ordinal)
+        var ancients = UnlockedAncients(player).OrderBy(ancient => ancient.Id.ToString(), StringComparer.Ordinal).ToArray();
+        excluded = ancients.SelectMany(AncientRelics).Select(relic => relic.Id).Distinct().Count(unavailable.Contains);
+        var groups = ancients
             .Select(ancient => (ancient.Id, Pool: AncientRelics(ancient)
                 .Where(relic => relic.Id.ToString() != excludeId && CanOffer(player, relic.ToMutable(), unavailable))
                 .OrderBy(relic => relic.Id.ToString(), StringComparer.Ordinal).ToList()))
-            .Where(group => group.Pool.Count > 0).ToList();
-        if (groups.Count == 0) return (null, []);
-        var selected = groups[rng.NextInt(groups.Count)];
-        var candidates = Draw(player, selected.Pool, 3, rng, unavailable);
-        return (selected.Id.ToString(), candidates);
+            .Where(group => group.Pool.Count >= 3).ToList();
+        while (groups.Count > 0)
+        {
+            int index = rng.NextInt(groups.Count);
+            var selected = groups[index];
+            var candidates = Draw(player, selected.Pool, 3, rng, unavailable);
+            if (candidates.Count == 3) return (selected.Id.ToString(), candidates);
+            groups.RemoveAt(index);
+        }
+        return (null, []);
     }
 
     private static List<RelicModel> Draw(Player player, List<RelicModel> pool, int count, Rng rng,

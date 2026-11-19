@@ -20,6 +20,8 @@ public static partial class RavenHeadlessTestsHooks
         Cases.Clear();
         Case("RitsuLib current and target display names", TestRitsuLoadOrderName);
         Case("Excel weights, every outcome boundary and result RNG", TestOutcomeWeights);
+        Case("editable gameplay odds and initial config", TestGameplayOddsConfig);
+        Case("Ancient draws, historical candidates, shortages and stake blocking", TestOfferShortages);
         Case("rarity triggers, tiers and targets", TestRarities);
         Case("starter, upgraded starter and wax stakes, rejection and restore", TestStakeEligibility);
         Case("direct Neow gift source, derived awards and deferred snapshot", TestAcquisitionSource);

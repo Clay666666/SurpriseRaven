@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Entities.Relics;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace SurpriseRaven.Hooks.Raven;
 
@@ -23,6 +25,9 @@ internal static class RavenStakeEligibilityHooks
         && !RavenRulesHooks.IsExcluded(relic) && !IsStarterOrUpgrade(relic)
         && !RavenNeowRelicsHooks.Contains(relic.Id)
         && !IsBlockedOffering(relic);
+
+    internal static bool CanStake(Player player, RelicModel relic) => CanStake(relic)
+        && (player.RunState is not RunState || !RavenStorageHooks.Get(player).BlockedStakeIds.Contains(relic.Id.ToString()));
 
     private static bool IsBlockedOffering(RelicModel relic) =>
         relic.IsWax || RavenAncientStakeRestrictionsHooks.Contains(relic);

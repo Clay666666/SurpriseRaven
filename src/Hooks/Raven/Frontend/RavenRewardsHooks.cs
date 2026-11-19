@@ -12,7 +12,6 @@ internal sealed partial class RavenRewardsHooks : Control
     private readonly List<RavenRewardEntryHooks> _entries = [];
     private readonly IRunState? _runState;
     private readonly Func<NTreasureRoomRelicHolder?>? _nativeFactory;
-    private readonly Label _choiceTitle = Text("", 24, bold: true, outline: 5);
     private TextureRect? _stake;
     private RavenRewardEntryHooks? _hovered;
     private bool _interactive;
@@ -24,10 +23,6 @@ internal sealed partial class RavenRewardsHooks : Control
         Name = "Rewards";
         Size = Design;
         MouseFilter = MouseFilterEnum.Ignore;
-        _choiceTitle.Name = "ChoiceTitle";
-        _choiceTitle.HorizontalAlignment = HorizontalAlignment.Center;
-        _choiceTitle.Hide();
-        AddChild(_choiceTitle);
         TreeExiting += Clear;
     }
 
@@ -61,7 +56,6 @@ internal sealed partial class RavenRewardsHooks : Control
         _entries.Clear();
         _entries.AddRange(next);
         if (_hovered is not null && !_entries.Contains(_hovered)) _hovered = null;
-        RefreshChoiceTitle(Math.Min(relics.Count, 3), bonus);
         RefreshNavigation();
 
         void Add(RelicModel relic, RavenPickupRequest request, int index)
@@ -95,19 +89,6 @@ internal sealed partial class RavenRewardsHooks : Control
             else entry.Slot.Root.Position = home - entry.Slot.Root.Size / 2;
             next.Add(entry);
         }
-    }
-
-    internal static string ChoiceText(int count) => count switch { 3 => "三选一！！！", 2 => "二选一！！！", _ => "" };
-
-    private void RefreshChoiceTitle(int count, bool bonus)
-    {
-        _choiceTitle.Text = bonus ? ChoiceText(count) : "";
-        _choiceTitle.Visible = _choiceTitle.Text.Length > 0;
-        if (!_choiceTitle.Visible) return;
-        var first = RavenRewardEntryHooks.Home(count, 0, true, false);
-        var last = RavenRewardEntryHooks.Home(count, count - 1, true, false);
-        _choiceTitle.Size = new Vector2(last.X - first.X + 136, 36);
-        _choiceTitle.Position = new Vector2(first.X - 68, first.Y - 112);
     }
 
     private void RefreshNavigation()
@@ -145,7 +126,6 @@ internal sealed partial class RavenRewardsHooks : Control
     internal void ShowStake(Texture2D? icon, Vector2 from, double duration)
     {
         HideStake();
-        _choiceTitle.Hide();
         _stake = new TextureRect
         {
             Texture = icon, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
@@ -168,8 +148,6 @@ internal sealed partial class RavenRewardsHooks : Control
         foreach (var entry in _entries) entry.Slot.Dispose();
         _entries.Clear();
         _hovered = null;
-        _choiceTitle.Text = "";
-        _choiceTitle.Hide();
         HideStake();
     }
 

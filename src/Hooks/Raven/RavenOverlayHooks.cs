@@ -19,6 +19,11 @@ internal static partial class RavenOverlayHooks
     private static string? _resultMessage;
     internal static bool HasOpenPanel => _entering || (_panel is not null && GodotObject.IsInstanceValid(_panel));
     internal static bool InPanelOperation => _inPanelOperation;
+    internal static void ShowShortagePop()
+    {
+        if (_panel is { } panel && GodotObject.IsInstanceValid(panel) && panel.Stage is { } stage)
+            stage.Hud.Pop("原件返还", RavenStyleHooks.Cream, animate: !stage.ReducedMotion);
+    }
 
     internal static void Reset()
     {

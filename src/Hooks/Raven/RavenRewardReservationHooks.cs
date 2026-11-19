@@ -13,6 +13,7 @@ namespace SurpriseRaven.Hooks.Raven;
 internal static class RavenRewardReservationHooks
 {
     private static readonly ConditionalWeakTable<Player, List<Reservation>> Active = new();
+    private static readonly System.Reflection.FieldInfo LinkedRewards = AccessTools.Field(typeof(LinkedRewardSet), "_rewards");
 
     internal sealed class Reservation
     {
@@ -44,8 +45,35 @@ internal static class RavenRewardReservationHooks
     }
 
     [HarmonyPrefix]
-    private static void RavenBeginRewardsPrefix(RewardsSet set, out Reservation? __state) =>
-        __state = RavenServiceHooks.IsSingleplayer ? Track(set) : null;
+    private static void RavenBeginRewardsPrefix(RewardsSet set, out Reservation? __state)
+    {
+        __state = null;
+        if (!RavenServiceHooks.IsSingleplayer) return;
+        FilterNewOffers(set);
+        __state = Track(set);
+    }
+
+    internal static void FilterNewOffers(RewardsSet set)
+    {
+        var ids = RavenRelicAvailabilityHooks.GetUnavailableRelicIds(set.Player, includeLamp: true, exceptRewards: set);
+        FilterRewards(set.Rewards, ids);
+    }
+
+    private static void FilterRewards(List<Reward> rewards, HashSet<ModelId> ids)
+    {
+        rewards.RemoveAll(reward =>
+        {
+            if (reward is LinkedRewardSet linked)
+            {
+                var children = (List<Reward>)LinkedRewards.GetValue(linked)!;
+                FilterRewards(children, ids);
+                return children.Count == 0;
+            }
+            if (reward is not RelicReward { IsPopulated: true, Relic: { } relic } || ids.Add(relic.Id)) return false;
+            Logger.Log($"[Raven] Native reward excluded before display: {relic.Id}.");
+            return true;
+        });
+    }
 
     [HarmonyPostfix]
     private static void RavenBeginRewardsPostfix(Reservation? __state, ref Task __result)
@@ -65,14 +93,15 @@ internal static class RavenRewardReservationHooks
         finally { reservation.Release(); }
     }
 
-    internal static void IncludePending(Player player, HashSet<ModelId> ids)
+    internal static void IncludePending(Player player, HashSet<ModelId> ids, RewardsSet? except = null)
     {
         if (!Active.TryGetValue(player, out var active)) return;
         var run = player.RunState;
         var room = run.BaseRoom;
         lock (active)
             foreach (var reservation in active)
-                if (ReferenceEquals(reservation.Run, run) && ReferenceEquals(reservation.Room, room))
+                if (ReferenceEquals(reservation.Run, run) && ReferenceEquals(reservation.Room, room)
+                    && !ReferenceEquals(reservation.Set, except))
                     IncludeRewards(reservation.Set.Rewards, ids);
     }
 

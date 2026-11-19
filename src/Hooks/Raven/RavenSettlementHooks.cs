@@ -14,6 +14,11 @@ public static partial class RavenServiceHooks
         var state = RavenStorageHooks.Get(player);
         if (state.Pending is not { } pending || !CanStart(player, state, expectedRevision)
             || !RavenTransactionHooks.IsReady(pending)) return;
+        if (HasUnavailableOffer(player, pending))
+        {
+            await ReturnUnavailableOfferAsync(player, state, pending);
+            return;
+        }
         RavenReplayLogHooks.BeforeClaim(player, pending, request);
         await RunOperationAsync(player, state, async () =>
         {
@@ -39,7 +44,8 @@ public static partial class RavenServiceHooks
             }, () => PersistCurrent(player));
             if (result == RavenClaimResult.Claimed)
             {
-                state.LastMessage = pending.Outcome == RavenOutcome.Keep ? "原件保留，可以继续投入或退出。"
+                state.LastMessage = pending.Shortage is not null ? pending.Notice!
+                    : pending.Outcome == RavenOutcome.Keep ? "原件保留，可以继续投入或退出。"
                     : pending.Outcome == RavenOutcome.Bonus
                         ? $"额外获得 {candidate!.Title.GetFormattedText()}。" + (pending.OriginalState == RavenOriginalState.Pending ? "原件仍待取回。" : "原件已处理。")
                         : $"{pending.StakeTitle} → {candidate!.Title.GetFormattedText()}。可以继续投入或退出。";

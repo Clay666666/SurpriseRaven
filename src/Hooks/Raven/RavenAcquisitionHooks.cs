@@ -32,18 +32,28 @@ internal static class RavenAcquisitionHooks
     }
 
     [HarmonyPrefix]
-    private static void RavenObtainPrefix(Player player, RelicModel relic, out AcquisitionScope __state)
+    private static bool RavenObtainPrefix(Player player, RelicModel relic, out AcquisitionScope? __state,
+        ref Task<RelicModel> __result)
     {
         bool live = RavenServiceHooks.BindLivePlayer(player);
+        if (live && !RavenNativeRelicOfferHooks.CanClaimNative(player, relic, includePurchases: false))
+        {
+            __state = null;
+            __result = Task.FromResult(player.Relics.FirstOrDefault(held => held.Id == relic.Id) ?? relic);
+            Logger.Log($"[Raven] Native acquisition rejected before insertion and pickup effects: {relic.Id}.");
+            return false;
+        }
         bool neow = live && RavenAcquisitionSourceHooks.CaptureDirectNeowAncient(player, relic);
         __state = new AcquisitionScope(live ? RavenServiceHooks.BeginObservedAcquisition() : static () => { },
             neow);
+        return true;
     }
 
     [HarmonyPostfix]
-    private static void RavenObtainPostfix(Player player, AcquisitionScope __state,
+    private static void RavenObtainPostfix(Player player, AcquisitionScope? __state,
         ref Task<RelicModel> __result)
     {
+        if (__state is null) return;
         __result = ObserveObtain(__result,
             obtained => RavenServiceHooks.OnObtained(player, obtained, __state.IsDirectNeowAncient), __state);
     }
