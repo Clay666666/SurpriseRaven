@@ -39,7 +39,7 @@ public sealed class RavenFrontendConfig
         {
             ("fadeIn", t.FadeIn), ("offerFly", t.OfferFly), ("crouch", t.Crouch), ("flyAway", t.FlyAway),
             ("away", t.Away), ("returnFly", t.ReturnFly), ("dropAt", t.DropAt), ("dropFall", t.DropFall),
-            ("swallowEnd", t.SwallowEnd), ("igniteStagger", t.IgniteStagger)
+            ("swallowEnd", t.SwallowEnd)
         })
             if (value <= 0 || value > 60) errors.Add($"timing {name}");
         if (t.GrabFraction is <= 0 or >= 1) errors.Add("timing grabFraction");

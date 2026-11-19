@@ -1,6 +1,6 @@
 # SurpriseRaven · 惊喜渡鸦
 
-Local stable build **0.4.4** restores the lamp after a reload and includes louder candle effects and an offline audio review.
+Local stable build **0.4.4+audio.1** restores the lamp after a reload and includes louder candle effects and an offline audio review.
 
 [简体中文](README.md)
 

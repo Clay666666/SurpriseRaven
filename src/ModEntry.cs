@@ -13,7 +13,7 @@ public static class ModEntry
     public static readonly string ModName = "惊喜渡鸦 / SurpriseRaven";
     internal static readonly Assembly BuildAssembly = typeof(ModEntry).Assembly;
     internal static string ReleaseVersion => BuildAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
-        .InformationalVersion.Split('+')[0];
+        .InformationalVersion;
     internal static string BuildCommit =>
         BuildAssembly.GetCustomAttributes<AssemblyMetadataAttribute>()
             .FirstOrDefault(attribute => attribute.Key == "RavenSourceCommit")?.Value ?? "unrecorded";

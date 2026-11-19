@@ -69,8 +69,8 @@ public static partial class RavenHeadlessTestsHooks
                 double gone = At(RavenCue.Gone), back = At(RavenCue.ReturnStart);
                 Check(Math.Abs(back - gone - (gains ? 0.8 : 0.0)) < 1e-6, "Only a gained light holds the raven offscreen for 0.8 seconds.");
                 if (gains)
-                    Check(At(RavenCue.Ignite) >= gone && At(RavenCue.Ignite) < back && Array.IndexOf(cues, RavenCue.Gone) < Array.IndexOf(cues, RavenCue.Ignite),
-                        "Ignition follows disappearance and precedes the return.");
+                    Check(Math.Abs(At(RavenCue.Ignite) - new RavenTimeline(timings, true).TimeOf(RavenCue.Extinguish)) < 1e-9,
+                        "The ignition animation and sound share the swallow extinguish frame.");
                 Check(Math.Abs(At(RavenCue.Drop) - back - timings.DropAt) < 1e-6
                     && Math.Abs(At(RavenCue.Reveal) - At(RavenCue.Drop) - timings.DropFall) < 1e-6, "Relative drop and reveal times follow the return.");
             }
@@ -87,6 +87,8 @@ public static partial class RavenHeadlessTestsHooks
     private static void TestAudioEvents()
     {
         var config = RavenFrontendConfigHooks.Current;
+        Check(config.Events["candle.light"].Volume == 0.84f && config.Events["result.upgrade_sfx"].Volume == 0.90f
+            && config.Events["result.upgrade"].Volume == 1f, "Latest linear mix changes the intended layers only.");
         Check(config.Events["candle.light"].GainDb == 6 && config.Events.Where(e => e.Key != "candle.light").All(e => e.Value.GainDb == 0),
             "The six ignition variants receive the same 6 dB boost.");
         Check(config.Events.Keys.Order().SequenceEqual(RavenFrontendConfig.RequiredEvents.Order()),
