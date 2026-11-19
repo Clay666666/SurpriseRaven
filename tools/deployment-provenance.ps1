@@ -96,7 +96,7 @@ function Assert-VerifiedBuild($Build, [string]$Index, $Game, [string]$ModId, [st
     Assert-PckReport (Join-Path $stage "assets\$ModId") (Join-Path $stage "$ModId-pck-report.json") | Out-Null
     $pairs = Get-Content -LiteralPath $Index -Raw -Encoding UTF8 | ConvertFrom-Json
     $assemblyVersion = [Version](($Version -split '[-+]', 2)[0])
-    if ($assemblyVersion.Revision -lt 0) { $assemblyVersion = [Version]"$Version.0" }
+    if ($assemblyVersion.Revision -lt 0) { $assemblyVersion = [Version]::new($assemblyVersion.Major, $assemblyVersion.Minor, $assemblyVersion.Build, 0) }
     foreach ($release in @('0.111.0', '0.113.1')) {
         $pair = @($pairs | Where-Object Version -eq $release)
         if ($pair.Count -ne 1 -or $pair[0].Directory -notmatch '^\d{8}-\d{6}-\d{3}$') {
