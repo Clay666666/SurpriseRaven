@@ -19,8 +19,11 @@ internal static class RavenStakeEligibilityHooks
     internal static bool IsStarterOrUpgrade(RelicModel relic) =>
         relic.Rarity == RelicRarity.Starter || UpgradedStarterIds.Value.Contains(relic.Id);
 
-    internal static bool CanStake(RelicModel relic) => !relic.HasBeenRemovedFromState && !relic.IsWax
+    internal static bool CanStake(RelicModel relic) => !relic.HasBeenRemovedFromState
         && !RavenRulesHooks.IsExcluded(relic) && !IsStarterOrUpgrade(relic)
         && !RavenNeowRelicsHooks.Contains(relic.Id)
-        && !RavenAncientStakeRestrictionsHooks.Contains(relic);
+        && !IsBlockedOffering(relic);
+
+    private static bool IsBlockedOffering(RelicModel relic) =>
+        relic.IsWax || RavenAncientStakeRestrictionsHooks.Contains(relic);
 }

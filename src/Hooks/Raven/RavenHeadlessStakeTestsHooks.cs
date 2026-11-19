@@ -62,16 +62,17 @@ public static partial class RavenHeadlessTestsHooks
         Check(!RunManager.Instance.IsInProgress, "Stake fixture must have no active run.");
         var player = Player.CreateForNewRun<Ironclad>(UnlockState.none, 918273UL);
         foreach (var pair in pairs) player.AddRelicInternal(pair.Upgrade.ToMutable(), silent: true);
-        var normal = ModelDb.Relic<Strawberry>().ToMutable();
-        var wax = ModelDb.Relic<Strawberry>().ToMutable();
+        var normal = ModelDb.Relic<StrikeDummy>().ToMutable();
+        var wax = ModelDb.Relic<StrikeDummy>().ToMutable();
         wax.IsWax = true;
+        var toyBox = ModelDb.Relic<ToyBox>().ToMutable();
         var ancient = ModelDb.Relic<GoldenPearl>().ToMutable();
         var circlet = ModelDb.Relic<Circlet>().ToMutable();
         var removed = ModelDb.Relic<Strawberry>().ToMutable();
         // ILSpy verified a private setter; model fixture only, without removal effects.
         typeof(RelicModel).GetProperty(nameof(RelicModel.HasBeenRemovedFromState))!.SetValue(removed, true);
         var eventRelic = ModelDb.AllRelics.First(r => r.Rarity == RelicRarity.Event).ToMutable();
-        foreach (var relic in new[] { normal, wax, ancient, circlet, removed, eventRelic })
+        foreach (var relic in new[] { normal, wax, toyBox, ancient, circlet, removed, eventRelic })
             player.AddRelicInternal(relic, silent: true);
         Check(RavenServiceHooks.GetStakes(player).SequenceEqual(new[] { normal, circlet }),
             "Stake list did not apply the shared restriction to inventory instances.");
@@ -82,10 +83,13 @@ public static partial class RavenHeadlessTestsHooks
         long revision = state.Revision;
         Check(wax.Id == normal.Id && !RavenStakeEligibilityHooks.CanStake(wax) && RavenStakeEligibilityHooks.CanStake(normal),
             "Wax eligibility must distinguish instances with the same ID.");
-        Check(!RavenStakeEligibilityHooks.CanStake(RelicModel.FromSerializable(wax.ToSerializable())),
-            "A wax relic restored from a save became eligible.");
-        Check(RavenServiceHooks.SubmitStakeAsync(player, wax, revision).GetAwaiter().GetResult() is null,
-            "Direct submission accepted a wax relic.");
+        foreach (var blocked in new[] { wax, toyBox })
+        {
+            Check(!RavenStakeEligibilityHooks.CanStake(RelicModel.FromSerializable(blocked.ToSerializable())),
+                "A blocked relic restored from a save became eligible.");
+            Check(RavenServiceHooks.SubmitStakeAsync(player, blocked, revision).GetAwaiter().GetResult() is null,
+                "Direct submission accepted a blocked relic.");
+        }
         Check(player.Relics.SequenceEqual(inventory) && state.Pending is null && state.Round == 0
             && state.PendingLights.SequenceEqual([3]) && state.Revision == revision && !state.InFlight && !state.Faulted,
             "Rejecting a wax relic changed inventory, opportunity or round state.");

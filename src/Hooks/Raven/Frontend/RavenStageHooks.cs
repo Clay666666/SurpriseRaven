@@ -100,6 +100,9 @@ internal sealed partial class RavenStageHooks : Control
         var global = GetGlobalTransform().Scale;
         float squash = Mathf.Abs(global.X) > 1e-4f ? Mathf.Clamp(Mathf.Abs(global.Y / global.X), 0.05f, 20f) : 1f;
         float scale = Mathf.Min(Size.X / Design.X, Size.Y * squash / Design.Y);
+        float flightOffset = Design.Y / 2 - RavenLayout.FlightArea.Position.Y;
+        float bannerScaleLimit = (Size.Y / 2 - Hud.BannerHeight - 4f) * squash / flightOffset;
+        if (bannerScaleLimit > 0) scale = Math.Min(scale, bannerScaleLimit);
         _canvas.Scale = new Vector2(scale, scale / squash);
         _canvas.Position = (Size - Design * _canvas.Scale) / 2;
         foreach (var candle in _candles) candle.Update(_time, delta);

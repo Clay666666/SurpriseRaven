@@ -1,5 +1,6 @@
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Screens.PauseMenu;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 
@@ -10,6 +11,13 @@ internal static class RavenReplayRecoveryHooks
 {
     private static readonly AsyncLocal<SerializableRun?> Retry = new();
     internal static bool RestoringNative => Retry.Value is not null;
+
+    [HarmonyPatch(typeof(NPauseMenu), "OnSaveAndQuitButtonPressed"), HarmonyPrefix]
+    private static void CaptureConfirmedLampBeforeQuit()
+    {
+        if (RavenServiceHooks.CurrentPlayer is { } player)
+            RavenReplayLogHooks.Mark(player, "save-and-quit");
+    }
 
     [HarmonyPatch(typeof(SaveManager), nameof(SaveManager.SaveRun)), HarmonyPrefix]
     private static bool KeepHostCheckpointDuringPickup(ref Task __result)

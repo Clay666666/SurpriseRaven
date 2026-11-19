@@ -7,11 +7,11 @@ namespace SurpriseRaven.Hooks.Raven;
 // Native reward-screen banner and back button where available, plus the current round.
 internal sealed partial class RavenHudHooks : Control
 {
+    private const float BannerScale = 0.91f;
     private readonly NCommonBanner? _banner;
     private readonly NBackButton? _back;
     private readonly Label _info, _message, _caption, _pop, _toast;
     private readonly PanelContainer _panel;
-    private bool _titleSized;
     private Tween? _popTween, _toastTween;
 
     internal RavenHudHooks()
@@ -22,9 +22,8 @@ internal sealed partial class RavenHudHooks : Control
         _banner = Native<NCommonBanner>("res://scenes/ui/common_banner.tscn");
         if (_banner is not null)
         {
-            const float scale = 0.65f;
             AddChild(RavenNativeLayoutHooks.Mount(_banner, new Vector2(0.5f, 0),
-                new Vector2(-_banner.CustomMinimumSize.X * scale / 2, 8), scale));
+                new Vector2(-_banner.CustomMinimumSize.X * BannerScale / 2, 0), BannerScale));
         }
         else AddChild(Centered(Text("渡鸦路灯", LampTitleSize(44), bold: true), 8));
         // Sized to its content: a short round plaque, widening only when a message needs it.
@@ -41,6 +40,7 @@ internal sealed partial class RavenHudHooks : Control
         column.AddChild(_message);
         panel.AddChild(column);
         AddChild(panel);
+        Resized += FitRoundPanel;
         _back = Native<NBackButton>("res://scenes/ui/back_button.tscn");
         if (_back is not null)
         {
@@ -71,6 +71,7 @@ internal sealed partial class RavenHudHooks : Control
     internal Control ExitControl => (Control?)_back ?? ExitFallback!;
     internal bool HasNativeBack => _back is not null;
     internal Control? Banner => _banner;
+    internal float BannerHeight => (_banner?.Size.Y ?? 0) * BannerScale;
     internal Control InfoPanel => _panel;
     internal Label CaptionLabel => _caption;
     internal Label PopLabel => _pop;
@@ -81,14 +82,8 @@ internal sealed partial class RavenHudHooks : Control
         {
             if (_banner is not null)
             {
-                _banner.ChangeText("渡鸦路灯");
-                if (!_titleSized)
-                {
-                    _banner.label.AutoSizeEnabled = false;
-                    _banner.label.AddThemeFontSizeOverride("font_size", LampTitleSize(_banner.label.GetThemeFontSize("font_size")));
-                    _titleSized = true;
-                }
                 if (Font(true) is { } font) _banner.label.AddThemeFontOverride("font", font);
+                _banner.ChangeText("渡鸦路灯");
                 _banner.AnimateIn();
             }
             _back?.Enable();
@@ -111,6 +106,15 @@ internal sealed partial class RavenHudHooks : Control
     {
         _message.Text = text;
         _message.Visible = !string.IsNullOrWhiteSpace(text);
+        FitRoundPanel();
+    }
+
+    private void FitRoundPanel()
+    {
+        float bannerLeft = Size.X / 2 - (_banner?.CustomMinimumSize.X ?? 0) * BannerScale / 2;
+        float margins = _panel.GetThemeStylebox("panel").GetMinimumSize().X;
+        float wrapWidth = Mathf.Clamp(bannerLeft - _panel.Position.X - margins - 12f, 140f, 420f);
+        _message.CustomMinimumSize = new Vector2(wrapWidth, 0);
         _panel.ResetSize();
     }
 

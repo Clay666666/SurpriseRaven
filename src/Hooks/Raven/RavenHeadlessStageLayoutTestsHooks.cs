@@ -54,6 +54,8 @@ internal static partial class RavenOverlayHooks
                 Check(stage.Hud.HasNativeBack && stage.Hud.Banner is { Modulate.A: >= 0.99f },
                     $"{at}: native back button and fully revealed native banner are present.");
                 var banner = (NCommonBanner)stage.Hud.Banner!;
+                Check(Mathf.IsEqualApprox(banner.GetGlobalRect().GetCenter().X, visible.GetCenter().X),
+                    $"{at}: the enlarged banner stays horizontally centered.");
                 var title = banner.label;
                 var titleFont = title.GetThemeFont("font");
                 int titleSize = title.GetThemeFontSize("font_size");
