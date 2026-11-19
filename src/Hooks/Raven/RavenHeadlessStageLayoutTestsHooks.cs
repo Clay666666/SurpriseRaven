@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Unlocks;
 
 namespace SurpriseRaven.Hooks.Raven;
@@ -52,7 +53,14 @@ internal static partial class RavenOverlayHooks
                 List<(string Name, Rect2 Rect)> hud = [("round panel", panel), ("exit", exit)];
                 Check(stage.Hud.HasNativeBack && stage.Hud.Banner is { Modulate.A: >= 0.99f },
                     $"{at}: native back button and fully revealed native banner are present.");
-                hud.Add(("banner", stage.Hud.Banner!.GetGlobalRect()));
+                var banner = (NCommonBanner)stage.Hud.Banner!;
+                var title = banner.label;
+                var titleFont = title.GetThemeFont("font");
+                int titleSize = title.GetThemeFontSize("font_size");
+                Check(titleFont.GetStringSize(title.Text, fontSize: titleSize).X <= title.Size.X
+                    && titleFont.GetHeight(titleSize) <= title.Size.Y,
+                    $"{at}: the enlarged title fits on one line without clipping.");
+                hud.Add(("banner", banner.GetGlobalRect()));
                 hud.Add(("caption", TextRect(stage.Hud.CaptionLabel)));
                 hud.Add(("pop", TextRect(stage.Hud.PopLabel)));
                 Logger.Log($"[Raven] Stage layout {at}: canvas {art}, flight {flight}, " + string.Join(", ", hud.Select(h => $"{h.Name} {h.Rect}")));

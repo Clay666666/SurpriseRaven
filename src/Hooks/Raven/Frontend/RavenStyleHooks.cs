@@ -9,6 +9,8 @@ namespace SurpriseRaven.Hooks.Raven;
 internal static partial class RavenStyleHooks
 {
     private static GradientTexture2D? _glow;
+    internal static int LampTitleSize(int baseSize) => Mathf.RoundToInt(baseSize * 1.4f);
+
     internal static Color Rarity(RelicRarity rarity) => RavenRulesHooks.Tier(rarity) switch
     {
         RelicRarity.Ancient => new Color(0.83f, 0.5f, 0.98f),

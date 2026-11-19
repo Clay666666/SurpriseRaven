@@ -6,39 +6,41 @@ namespace SurpriseRaven.Hooks.Raven;
 // One transform for all lamp visuals. The outer panel and the game's backstop stay full-screen.
 internal static class RavenPageLayoutHooks
 {
-    internal const float Gap = 12f;
     internal const float DefaultTop = 112f;
 
     internal static float NativeTop(Control panel)
     {
         var ui = NRun.Instance?.GlobalUi;
-        List<Control?> controls = [];
-        if (ui?.TopBar is { } bar && GodotObject.IsInstanceValid(bar) && !bar.IsQueuedForDeletion())
-            controls.AddRange([bar.GetNodeOrNull<Control>("BgImage"), bar.Map, bar.Deck, bar.Pause]);
-        if (ui?.RelicInventory is { } inventory && GodotObject.IsInstanceValid(inventory)
-            && !inventory.IsQueuedForDeletion() && inventory.IsVisibleInTree())
-            controls.AddRange(inventory.RelicNodes);
-        return TopBoundary(panel, controls);
+        if (InventoryTop(panel, ui?.RelicInventory) is { } top) return top;
+        return ui?.TopBar is { } bar && GodotObject.IsInstanceValid(bar) && !bar.IsQueuedForDeletion()
+            ? TopBarBottom(panel, [bar.GetNodeOrNull<Control>("BgImage"), bar.Map, bar.Deck, bar.Pause])
+            : DefaultTop;
     }
 
-    internal static float TopBoundary(Control panel, IEnumerable<Control?> controls)
+    internal static float? InventoryTop(Control panel, Control? inventory) =>
+        VisibleBounds(panel, inventory, allowEmptyHeight: true) is { } bounds ? Math.Max(0, bounds.Position.Y) : null;
+
+    internal static float TopBarBottom(Control panel, IEnumerable<Control?> controls)
     {
-        var inverse = panel.GetGlobalTransform().AffineInverse();
-        var visibleArea = panel.GetGlobalRect();
         float? bottom = null;
         foreach (var control in controls)
-        {
-            if (control is null || !GodotObject.IsInstanceValid(control) || control.IsQueuedForDeletion() || !control.IsVisibleInTree()
-                || control.Size.X <= 0 || control.Size.Y <= 0) continue;
-            var rect = control.GetGlobalRect();
-            if (!rect.Intersects(visibleArea)) continue;
-            rect = rect.Intersection(visibleArea);
-            float y = Math.Max((inverse * rect.Position).Y, (inverse * rect.End).Y);
-            y = Math.Max(y, (inverse * new Vector2(rect.End.X, rect.Position.Y)).Y);
-            y = Math.Max(y, (inverse * new Vector2(rect.Position.X, rect.End.Y)).Y);
-            if (float.IsFinite(y)) bottom = Math.Max(bottom ?? y, y);
-        }
-        return bottom is { } value ? Mathf.Ceil(value) + Gap : DefaultTop;
+            if (VisibleBounds(panel, control) is { } bounds)
+                bottom = Math.Max(bottom ?? 0, Math.Min(bounds.End.Y, panel.Size.Y));
+        return bottom ?? DefaultTop;
+    }
+
+    private static Rect2? VisibleBounds(Control panel, Control? control, bool allowEmptyHeight = false)
+    {
+        if (control is null || !GodotObject.IsInstanceValid(control) || control.IsQueuedForDeletion()
+            || !control.IsVisibleInTree() || control.Size.X <= 0 || (!allowEmptyHeight && control.Size.Y <= 0))
+            return null;
+        var toPanel = panel.GetGlobalTransformWithCanvas().AffineInverse() * control.GetGlobalTransformWithCanvas();
+        var bounds = toPanel * new Rect2(Vector2.Zero, control.Size);
+        if (!bounds.IsFinite() || bounds.End.X <= 0 || bounds.Position.X >= panel.Size.X
+            || bounds.Position.Y >= panel.Size.Y || bounds.End.Y < 0
+            || (bounds.End.Y == 0 && bounds.Size.Y > 0))
+            return null;
+        return bounds;
     }
 
     internal static void Apply(Control content, Vector2 size, float requestedTop)

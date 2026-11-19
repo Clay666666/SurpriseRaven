@@ -21,7 +21,7 @@ public static partial class RavenHeadlessTestsHooks
         Case("RitsuLib current and target display names", TestRitsuLoadOrderName);
         Case("Excel weights, every outcome boundary and result RNG", TestOutcomeWeights);
         Case("rarity triggers, tiers and targets", TestRarities);
-        Case("starter and upgraded starter stakes, rejection and restore", TestStakeEligibility);
+        Case("starter, upgraded starter and wax stakes, rejection and restore", TestStakeEligibility);
         Case("direct Neow gift source, derived awards and deferred snapshot", TestAcquisitionSource);
         Case("native obtained history, Neow exclusion and single-source Ancient pools", TestRelicHistoryAndPools);
         Case("merchant stock and remaining treasure relics", TestNativeRoomRelicOffers);

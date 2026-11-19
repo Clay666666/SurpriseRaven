@@ -24,7 +24,7 @@ internal sealed partial class RavenLampPanelHooks
     {
         var state = RavenServiceHooks.State;
         _revision = state.Revision;
-        _content.AddChild(Text("渡鸦路灯", 30));
+        _content.AddChild(Text("渡鸦路灯", RavenStyleHooks.LampTitleSize(30)));
         if (IsTerminal)
         {
             _content.AddChild(Text(_terminalMessage ?? state.LastMessage, 24));
@@ -64,7 +64,7 @@ internal sealed partial class RavenLampPanelHooks
         else
         {
             entries.AddChild(Text("将上方可献祭遗物拖到下方圆环，松手献祭。", 22));
-            entries.AddChild(Text("初始遗物及升级品、涅奥遗物、事件与任务遗物不可投入。", 17));
+            entries.AddChild(Text("蜡质、初始遗物及升级品、涅奥遗物、事件与任务遗物不可投入。", 17));
         }
         var targetHost = new Control { CustomMinimumSize = new Vector2(850, 100), MouseFilter = MouseFilterEnum.Ignore };
         _fallbackTarget ??= new RavenSacrificeTargetHooks();

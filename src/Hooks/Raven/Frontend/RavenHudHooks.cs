@@ -11,6 +11,7 @@ internal sealed partial class RavenHudHooks : Control
     private readonly NBackButton? _back;
     private readonly Label _info, _message, _caption, _pop, _toast;
     private readonly PanelContainer _panel;
+    private bool _titleSized;
     private Tween? _popTween, _toastTween;
 
     internal RavenHudHooks()
@@ -25,7 +26,7 @@ internal sealed partial class RavenHudHooks : Control
             AddChild(RavenNativeLayoutHooks.Mount(_banner, new Vector2(0.5f, 0),
                 new Vector2(-_banner.CustomMinimumSize.X * scale / 2, 8), scale));
         }
-        else AddChild(Centered(Text("渡鸦路灯", 44, bold: true), 8));
+        else AddChild(Centered(Text("渡鸦路灯", LampTitleSize(44), bold: true), 8));
         // Sized to its content: a short round plaque, widening only when a message needs it.
         var panel = _panel = new PanelContainer { Position = new Vector2(36, 36) };
         panel.AddThemeStyleboxOverride("panel", Panel());
@@ -81,7 +82,13 @@ internal sealed partial class RavenHudHooks : Control
             if (_banner is not null)
             {
                 _banner.ChangeText("渡鸦路灯");
-                if (Font(true) is { } font) _banner.GetNodeOrNull<Label>("Label")?.AddThemeFontOverride("font", font);
+                if (!_titleSized)
+                {
+                    _banner.label.AutoSizeEnabled = false;
+                    _banner.label.AddThemeFontSizeOverride("font_size", LampTitleSize(_banner.label.GetThemeFontSize("font_size")));
+                    _titleSized = true;
+                }
+                if (Font(true) is { } font) _banner.label.AddThemeFontOverride("font", font);
                 _banner.AnimateIn();
             }
             _back?.Enable();

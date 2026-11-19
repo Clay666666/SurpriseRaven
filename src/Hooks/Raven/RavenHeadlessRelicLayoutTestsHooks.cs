@@ -28,18 +28,17 @@ internal static partial class RavenOverlayHooks
                 fixture.AddChild(map);
                 var inventoryParent = new Control();
                 fixture.AddChild(inventoryParent);
-                var flow = new HFlowContainer { Position = new Vector2(24, 104), Size = new Vector2(480, 64) };
+                var flow = new HFlowContainer { Position = new Vector2(24, 104), Size = new Vector2(480, 0) };
                 flow.AddThemeConstantOverride("h_separation", 8);
                 flow.AddThemeConstantOverride("v_separation", 6);
                 inventoryParent.AddChild(flow);
                 var rows = new List<Control>();
-                IEnumerable<Control?> Bounds() => new Control?[] { background, map }.Concat(rows);
-                float Boundary() => RavenPageLayoutHooks.TopBoundary(panel, Bounds());
-                void Verify(float expectedBottom, string label)
+                float Boundary() => RavenPageLayoutHooks.InventoryTop(panel, flow)
+                    ?? RavenPageLayoutHooks.TopBarBottom(panel, [background, map]);
+                void Verify(float expectedTop, string label)
                 {
                     float top = Boundary();
-                    Check(top >= expectedBottom + 12 - 0.01f && top <= expectedBottom + 13.01f,
-                        $"{label}: header boundary does not follow the visible relic rows.");
+                    Check(Mathf.IsEqualApprox(top, expectedTop), $"{label}: header boundary {top} did not match {expectedTop}.");
                     RavenPageLayoutHooks.Apply(content, size, top);
                     Check(content.Position.X == 0 && content.Scale.X == 1 && content.Size.IsEqualApprox(size),
                         $"{label}: horizontal or logical dimensions changed.");
@@ -57,23 +56,23 @@ internal static partial class RavenOverlayHooks
                 }
 
                 await WaitForRelicLayout(tree);
-                Verify(100, "Empty inventory");
+                Verify(104, "Empty inventory");
                 foreach (var sample in new[] { (Count: 1, Lines: 1), (Count: 6, Lines: 1), (Count: 7, Lines: 2), (Count: 13, Lines: 3) })
                 {
                     AddTo(sample.Count);
                     await WaitForRelicLayout(tree);
                     Check(flow.GetLineCount() == sample.Lines, "Actual FlowContainer did not wrap into the expected rows.");
-                    Verify(104 + sample.Lines * 64 + (sample.Lines - 1) * 6, $"{sample.Lines} relic rows");
+                    Verify(104, $"{sample.Lines} relic rows");
                 }
 
                 flow.Size = new Vector2(224, flow.Size.Y);
                 await WaitForRelicLayout(tree);
                 Check(flow.GetLineCount() == 5, "Narrowing the inventory did not produce five rows.");
-                Verify(104 + 5 * 64 + 4 * 6, "Narrow inventory");
+                Verify(104, "Narrow inventory");
                 flow.Position = new Vector2(24, -1000);
                 Verify(100, "Inventory moved above the screen while still Visible");
                 flow.Position = new Vector2(24, -20);
-                Verify(-20 + 5 * 64 + 4 * 6, "Partially visible inventory");
+                Verify(0, "Partially visible inventory");
                 flow.Position = new Vector2(24, 104);
                 inventoryParent.Hide();
                 Verify(100, "Inventory hidden through its ancestor");
@@ -87,29 +86,25 @@ internal static partial class RavenOverlayHooks
                 }
                 await WaitForRelicLayout(tree);
                 Check(flow.GetLineCount() == 2, "Removing relics did not reduce the line count.");
-                Verify(104 + 2 * 64 + 6, "Relics removed");
+                Verify(104, "Relics removed");
                 flow.Size = new Vector2(480, flow.Size.Y);
                 await WaitForRelicLayout(tree);
                 Check(flow.GetLineCount() == 1, "Widening the inventory did not restore one row.");
-                Verify(168, "Inventory widened");
+                Verify(104, "Inventory widened");
                 inventoryParent.Position = new Vector2(17, 30);
                 inventoryParent.Scale = new Vector2(1.1f, 0.8f);
-                Verify(30 + 168 * 0.8f, "Inventory ancestor transformed");
+                Verify(30 + 104 * 0.8f, "Inventory ancestor transformed");
 
-                float stableTop = Boundary();
                 var excluded = new Control { Position = new Vector2(0, 700), Size = new Vector2(64, 64) };
                 fixture.AddChild(excluded);
                 excluded.Hide();
-                Check(Mathf.IsEqualApprox(RavenPageLayoutHooks.TopBoundary(panel, Bounds().Append(excluded)), stableTop),
-                    "Hidden nodes affect the header boundary.");
+                Check(RavenPageLayoutHooks.InventoryTop(panel, excluded) is null, "Hidden inventory supplies a boundary.");
                 excluded.Show();
                 excluded.Position = new Vector2(size.X + 10, 700);
-                Check(Mathf.IsEqualApprox(RavenPageLayoutHooks.TopBoundary(panel, Bounds().Append(excluded)), stableTop),
-                    "Nodes outside the horizontal visible area affect the header boundary.");
+                Check(RavenPageLayoutHooks.InventoryTop(panel, excluded) is null, "Horizontally offscreen inventory supplies a boundary.");
                 excluded.Position = new Vector2(0, 700);
                 excluded.QueueFree();
-                Check(Mathf.IsEqualApprox(RavenPageLayoutHooks.TopBoundary(panel, Bounds().Append(excluded)), stableTop),
-                    "Queued nodes affect the header boundary before deletion.");
+                Check(RavenPageLayoutHooks.InventoryTop(panel, excluded) is null, "Queued inventory supplies a boundary before deletion.");
 
                 var target = new Control { Position = new Vector2(400, 300), Size = new Vector2(96, 96) };
                 content.AddChild(target);

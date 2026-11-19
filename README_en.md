@@ -1,6 +1,8 @@
 # SurpriseRaven · 惊喜渡鸦
 
-Local stable build **0.4.5** restores stable lamp choices after completed normal/elite combats or a depleted chest. Reloading a Glass Eye or Sea Glass preview returns you to the lamp before pickup, with the same stake and offers. Shops, events, rest sites, bosses, remaining room rewards and unmatched saves use the native room checkpoint.
+Local build **0.4.6** aligns the top of the lamp page with the top of the relic bar, increases the lamp title font size by 40%, and excludes wax relics from offerings.
+
+The previous save update restores stable lamp choices after completed normal/elite combats or a depleted chest. Reloading a Glass Eye or Sea Glass preview returns you to the lamp before pickup, with the same stake and offers. Shops, events, rest sites, bosses, remaining room rewards and unmatched saves use the native room checkpoint.
 
 The previous audio update restores the lamp after a reload and includes louder candle effects and an offline audio review.
 
@@ -29,7 +31,7 @@ Slay the Spire 2/
 ## Playing the Raven Lamp
 
 - **Earn a visit.** Obtain an Uncommon, Rare, Ancient, or Shop relic. Once the game finishes the pickup and any choices, the lamp opens automatically. Each qualifying relic gives you one opportunity in that room. A direct Ancient gift from Neow, reloading a save, and rewards granted by the raven do not grant visits. The lamp is single-player only.
-- **Make an offering.** Drag a relic with a teal glow from the game's top relic bar onto the ring beneath the lamp, then release it. You can offer a relic you owned before the visit. Starting relics and their upgrades, relics from Neow's gift pool, Event relics, registered quest relics, and 32 Ancients with immediate pickup benefits are ineligible. [Excluded Ancients by name and model ID](docs/plans/raven-ui-ancient-stakes.md#禁投名单核对)
+- **Make an offering.** Drag a relic with a teal glow from the game's top relic bar onto the ring beneath the lamp, then release it. You can offer a relic you owned before the visit. Wax relics, starting relics and their upgrades, relics from Neow's gift pool, Event relics, registered quest relics, and 32 Ancients with immediate pickup benefits are ineligible. [Excluded Ancients by name and model ID](docs/plans/raven-ui-ancient-stakes.md#禁投名单核对)
 - **Read the candles.** A visit starts with **0–5** lit gameplay candles. The four decorative candles do not affect the odds. Each round your offering survives has a **50%** chance of lighting one more, up to **6**. You can keep playing at six lights. Odds depend on the offering's rarity and the number of lit candles. Extra light can also increase the chance of losing the relic. For example, a Common offering at six lights has a 70% chance to upgrade, 13% to trade at the same tier, and 17% to be swallowed. [Odds by rarity and candle count (Chinese)](docs/plans/raven-excel-odds.md#实际抽签概率)
 - **Collect before leaving.** The raven can upgrade, trade, downgrade, or swallow your offering. Only Rare and Ancient offerings can trigger a choice of three bonus relics. Ancients cannot be swallowed. Once rewards land, click a relic, hover over it and press F, or focus it and press Confirm. On a bonus round, reclaim your original relic and pick one bonus reward separately. Escape or the back button leaves unclaimed relics behind.
 
