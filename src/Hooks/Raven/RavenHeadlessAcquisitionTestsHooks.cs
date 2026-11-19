@@ -77,26 +77,27 @@ public static partial class RavenServiceHooks
         if (System.Environment.GetEnvironmentVariable("STS2_SURPRISE_RAVEN_HEADLESS_TEST") != "1"
             || Godot.DisplayServer.GetName() != "headless" || RunManager.Instance.IsInProgress)
             throw new InvalidOperationException("Acquisition fixture requires headless with no active run.");
-        int baselineDepth = _acquisitionDepth;
-        int baselineSuppression = SuppressionDepth.Value;
+        var lifetime = _lifetime;
+        int baselineDepth = lifetime.Acquisitions;
+        int baselineSuppression = lifetime.Suppression.Value;
         var originalPlayer = CurrentPlayer;
         try
         {
             AcquisitionStarted();
             var scope = new RavenAcquisitionHooks.AcquisitionScope();
-            if (_acquisitionDepth != baselineDepth + 1) return false;
+            if (lifetime.Acquisitions != baselineDepth + 1) return false;
             scope.Complete();
             scope.Complete();
-            if (_acquisitionDepth != baselineDepth) return false;
-            SuppressionDepth.Value++;
+            if (lifetime.Acquisitions != baselineDepth) return false;
+            lifetime.Suppression.Value++;
             if (!SuppressAcquisitions) return false;
             OnObtained(null!, relic); // The real observer entry must return before any run/player access.
             return ReferenceEquals(CurrentPlayer, originalPlayer);
         }
         finally
         {
-            _acquisitionDepth = baselineDepth;
-            SuppressionDepth.Value = baselineSuppression;
+            lifetime.Acquisitions = baselineDepth;
+            lifetime.Suppression.Value = baselineSuppression;
         }
     }
 }

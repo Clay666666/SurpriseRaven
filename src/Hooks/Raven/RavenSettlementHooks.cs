@@ -21,7 +21,7 @@ public static partial class RavenServiceHooks
                 var identity = OriginalIdentity(player, pending);
                 if (identity.Ambiguous) throw new InvalidOperationException("Ambiguous original; refusing to return another relic.");
                 var originalResult = RavenTransactionHooks.CollectOriginal(state, pending,
-                    identity.Find(player.Relics) is not null, () => RavenStorageHooks.Touch(player));
+                    identity.Find(player.Relics) is not null, () => PersistCurrent(player));
                 Logger.Log($"[Raven] Original pickup: {pending.StakeId}, result={originalResult}; no Obtain.");
                 return;
             }
@@ -35,7 +35,7 @@ public static partial class RavenServiceHooks
             {
                 int position = RavenTransactionHooks.RewardIndex(pending, player.Relics.Count());
                 await RelicCmd.Obtain(candidate!, player, position);
-            }, () => RavenStorageHooks.Touch(player));
+            }, () => PersistCurrent(player));
             if (result == RavenClaimResult.Claimed)
             {
                 state.LastMessage = pending.Outcome == RavenOutcome.Keep ? "原件保留，可以继续投入或退出。"
@@ -78,23 +78,27 @@ public static partial class RavenServiceHooks
 
     private static async Task RunOperationAsync(Player player, RavenState state, Func<Task> operation)
     {
-        Busy = true;
-        _exitRequested = false;
-        SuppressionDepth.Value++;
+        var lifetime = _lifetime;
+        lifetime.Busy = true;
+        lifetime.ExitRequested = false;
+        lifetime.Suppression.Value++;
         try { await operation(); }
         catch (Exception error) { RavenTransactionHooks.Fault(state, error); }
         finally
         {
             try
             {
-                ReconcileOriginal(player, state);
-                if (_exitRequested) await AbandonCoreAsync(player, state, state.RoomKey != RoomKey(player));
+                if (ReferenceEquals(lifetime, _lifetime))
+                {
+                    ReconcileOriginal(player, state);
+                    if (lifetime.ExitRequested) await AbandonCoreAsync(player, state, state.RoomKey != RoomKey(player));
+                }
             }
             finally
             {
-                SuppressionDepth.Value = Math.Max(0, SuppressionDepth.Value - 1);
-                Busy = false;
-                SaveAndNotify(player);
+                lifetime.Suppression.Value = Math.Max(0, lifetime.Suppression.Value - 1);
+                lifetime.Busy = false;
+                if (ReferenceEquals(lifetime, _lifetime)) SaveAndNotify(player);
             }
         }
     }

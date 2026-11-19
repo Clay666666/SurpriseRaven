@@ -9,14 +9,8 @@ namespace SurpriseRaven.Hooks.Raven;
 
 public static partial class RavenServiceHooks
 {
-    private static readonly AsyncLocal<int> SuppressionDepth = new();
-    private static int _acquisitionDepth;
     private static bool _initialized;
-    private static bool _exitRequested;
     private static bool _frameErrorLogged;
-    public static Player? CurrentPlayer { get; private set; }
-    public static bool Busy { get; private set; }
-    public static bool SuppressAcquisitions => SuppressionDepth.Value > 0;
     public static RavenState State => CurrentPlayer is { } player ? RavenStorageHooks.Get(player) : new();
     public static event Action? Changed;
 
@@ -31,9 +25,7 @@ public static partial class RavenServiceHooks
         Logger.Log("[Raven] Singleplayer lamp service initialized.");
     }
 
-    public static void AcquisitionStarted() => _acquisitionDepth++;
-    public static void AcquisitionFinished() => _acquisitionDepth = Math.Max(0, _acquisitionDepth - 1);
-    public static bool IsSingleplayer => RunManager.Instance.IsInProgress
+    public static bool IsSingleplayer => !RavenRunLifetimeHooks.CleaningUp && RunManager.Instance.IsInProgress
         && RunManager.Instance.NetService?.Type == NetGameType.Singleplayer;
     public static string RoomKey(Player player) =>
         $"{player.RunState.CurrentActIndex}:{player.RunState.ActFloor}:{player.RunState.BaseRoom?.Id}";
@@ -42,8 +34,9 @@ public static partial class RavenServiceHooks
     {
         var run = RunManager.Instance;
         var combat = CombatManager.Instance;
-        return IsSingleplayer && ReferenceEquals(CurrentPlayer, player) && !Busy
-            && !run.IsCleaningUp && !run.IsGameOver && _acquisitionDepth == 0
+        return IsSingleplayer && _lifetime.Owns(player) && ReferenceEquals(run.DebugOnlyGetState(), player.RunState)
+            && player.RunState.BaseRoom is not null && !Busy
+            && !run.IsCleaningUp && !run.IsGameOver && !HasPendingAcquisition
             && !combat.IsInProgress && !combat.IsStarting && !combat.IsEnding
             && run.ActionExecutor?.IsRunning != true && run.ActionQueueSet?.IsEmpty != false;
     }
@@ -57,11 +50,9 @@ public static partial class RavenServiceHooks
             Logger.Log($"[Raven] No opportunity: direct Neow ancient gift {relic.Id}.");
             return;
         }
-        if (!IsSingleplayer || SuppressAcquisitions || RavenRulesHooks.IsExcluded(relic)
+        if (!BindLivePlayer(player) || SuppressAcquisitions || RavenRulesHooks.IsExcluded(relic)
             || !RavenRulesHooks.GrantsOpportunity(relic.Rarity)) return;
         var state = RavenStorageHooks.Get(player);
-        if (!ReferenceEquals(CurrentPlayer, player)) RavenStageSession.RestoreOpportunity(state);
-        CurrentPlayer = player;
         RavenOpportunityQueueHooks.Enqueue(state, RavenStorageHooks.Rng(player, "initial").NextInt(0, 6), RoomKey(player));
         SaveAndNotify(player);
         Logger.Log($"[Raven] Opportunity: {relic.Id}, count={state.PendingLights.Count}, lights={state.Lights}.");
@@ -74,24 +65,17 @@ public static partial class RavenServiceHooks
     {
         try
         {
-            if (!IsSingleplayer)
+            if (!IsSingleplayer || RunManager.Instance.IsCleaningUp)
             {
-                CurrentPlayer = null;
-                RavenOverlayHooks.Dismiss();
+                if (CurrentPlayer is not null) ChangeRun(null);
                 return;
             }
             var player = RunManager.Instance.DebugOnlyGetState()?.Players.FirstOrDefault();
             if (player is null) return;
-            bool restored = !ReferenceEquals(CurrentPlayer, player);
-            CurrentPlayer = player;
+            ChangeRun(player);
+            // Saved players become visible before LoadIntoLatestMapCoord has restored their base room.
+            if (player.RunState.BaseRoom is null) return;
             var state = RavenStorageHooks.Get(player);
-            if (restored) RavenStageSession.RestoreOpportunity(state);
-            if (restored && RavenTransactionHooks.RecoverInterrupted(state)) SaveAndNotify(player);
-            if (restored && RavenSessionHooks.MigrateLegacy(state))
-            {
-                Logger.Log("[Raven] Migrated a legacy bonus choice into the locked round result.");
-                SaveAndNotify(player);
-            }
             if (!Busy && ReconcileOriginal(player, state)) SaveAndNotify(player);
             if (!Busy && !state.Faulted && state.HasOpportunity && state.RoomKey != RoomKey(player))
             {
@@ -120,6 +104,7 @@ public static partial class RavenServiceHooks
 
     private static void SaveAndNotify(Player player)
     {
+        if (!_lifetime.Owns(player)) return;
         RavenStorageHooks.Touch(player);
         foreach (var callback in Changed?.GetInvocationList() ?? [])
             try { ((Action)callback)(); }

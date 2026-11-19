@@ -19,7 +19,7 @@ public static partial class RavenServiceHooks
             {
                 await RavenTransactionHooks.CommitAsync(state, pending,
                     () => throw new InvalidOperationException("Committed v1 source must never be removed again."),
-                    () => RavenStorageHooks.Touch(player), legacy: true);
+                    () => PersistCurrent(player), legacy: true);
                 return;
             }
             var stake = ResolveStake(player, pending);
@@ -32,7 +32,7 @@ public static partial class RavenServiceHooks
                 pending.StakeTitle = stake.Title.GetFormattedText();
             }
             bool committed = await RavenTransactionHooks.CommitAsync(state, pending,
-                () => RelicCmd.Remove(stake!), () => RavenStorageHooks.Touch(player), legacy: true);
+                () => RelicCmd.Remove(stake!), () => PersistCurrent(player), legacy: true);
             if (committed)
                 Logger.Log($"[Raven] Legacy pending normalized without reroll: {pending.Outcome}, consumed={pending.StakeConsumed}.");
         });

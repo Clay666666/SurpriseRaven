@@ -83,12 +83,13 @@ internal sealed partial class RavenStageHooks
             try
             {
                 _plan = await RavenServiceHooks.SubmitStakeAsync(_player, relic, revision);
-                if (GodotObject.IsInstanceValid(this) && IsInsideTree()) BeginRound(relic, CanvasPoint(viewportPoint));
+                if (_generation == RavenServiceHooks.Generation && GodotObject.IsInstanceValid(this) && IsInsideTree())
+                    BeginRound(relic, CanvasPoint(viewportPoint));
             }
             finally
             {
                 _planning = false;
-                if (_timeline is null) RavenStageSession.TimelineActive = false;
+                if (_generation == RavenServiceHooks.Generation && _timeline is null) RavenStageSession.TimelineActive = false;
             }
         });
     }

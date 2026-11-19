@@ -14,11 +14,21 @@ internal static partial class RavenOverlayHooks
 {
     private static RavenLampPanelHooks? _panel;
     private static bool _subscribed, _entering, _inPanelOperation;
-    private static readonly RavenExitCoordinatorHooks ExitCoordinator = new();
+    private static RavenExitCoordinatorHooks ExitCoordinator = new();
     private static bool _leaving => ExitCoordinator.IsRunning;
     private static string? _resultMessage;
     internal static bool HasOpenPanel => _entering || (_panel is not null && GodotObject.IsInstanceValid(_panel));
     internal static bool InPanelOperation => _inPanelOperation;
+
+    internal static void Reset()
+    {
+        _entering = _inPanelOperation = false;
+        ExitCoordinator = new RavenExitCoordinatorHooks();
+        _resultMessage = null;
+        try { Dismiss(); }
+        catch (Exception error) { Logger.Log($"[Raven] Previous lamp panel cleanup failed: {error}"); }
+        finally { _panel = null; }
+    }
 
     internal static void TryShow()
     {
@@ -47,18 +57,23 @@ internal static partial class RavenOverlayHooks
 
     private static async Task EnterAsync(Player player)
     {
+        long generation = RavenServiceHooks.Generation;
         _entering = true;
         bool faded = false;
         try
         {
             faded = await RavenTransitionHooks.FadeOutAsync();
-            if (CanOpen(player) && (RavenServiceHooks.State.HasOpportunity || _resultMessage is not null)) Push(player);
+            if (generation == RavenServiceHooks.Generation && CanOpen(player)
+                && (RavenServiceHooks.State.HasOpportunity || _resultMessage is not null)) Push(player);
         }
         catch (Exception error) { Logger.Log($"[Raven] Enter transition failed: {error}"); }
         finally
         {
-            _entering = false;
-            if (faded) await RavenTransitionHooks.FadeInAsync();
+            if (generation == RavenServiceHooks.Generation)
+            {
+                _entering = false;
+                if (faded) await RavenTransitionHooks.FadeInAsync();
+            }
         }
     }
 
@@ -78,15 +93,19 @@ internal static partial class RavenOverlayHooks
     internal static void Dismiss()
     {
         var panel = _panel;
-        _panel = null;
-        if (panel is null || !GodotObject.IsInstanceValid(panel)) return;
-        if (NOverlayStack.Instance is { } stack) stack.Remove(panel);
-        else panel.AfterOverlayClosed();
+        if (panel is not null && GodotObject.IsInstanceValid(panel))
+        {
+            // CleanUp may have already replaced the singleton stack. Remove only from this panel's owner.
+            if (panel.GetParent() is NOverlayStack stack) stack.Remove(panel);
+            else panel.AfterOverlayClosed();
+        }
+        if (ReferenceEquals(_panel, panel)) _panel = null;
     }
 
     internal static void Closed(RavenLampPanelHooks panel)
     {
-        if (ReferenceEquals(panel, _panel)) _panel = null;
+        if (!ReferenceEquals(panel, _panel)) return;
+        _panel = null;
         if (!RavenServiceHooks.State.HasOpportunity) _resultMessage = null;
     }
 
@@ -100,29 +119,37 @@ internal static partial class RavenOverlayHooks
     internal static async Task RunServiceOperation(Func<Task> operation, bool dismiss = false)
     {
         if (RavenServiceHooks.Busy || _inPanelOperation) return;
+        long generation = RavenServiceHooks.Generation;
         _inPanelOperation = !dismiss;
         if (dismiss) Dismiss();
         try { await operation(); }
         catch (Exception error) { Logger.Log($"[Raven] Lamp operation failed: {error}"); }
         finally
         {
-            _inPanelOperation = false;
-            if (!RavenServiceHooks.State.HasOpportunity) _resultMessage = RavenServiceHooks.State.LastMessage;
-            if (_panel is not null && GodotObject.IsInstanceValid(_panel)) _panel.Refresh();
-            else TryShow();
+            if (generation == RavenServiceHooks.Generation)
+            {
+                _inPanelOperation = false;
+                if (!RavenServiceHooks.State.HasOpportunity) _resultMessage = RavenServiceHooks.State.LastMessage;
+                if (_panel is not null && GodotObject.IsInstanceValid(_panel)) _panel.Refresh();
+                else TryShow();
+            }
         }
     }
 
     internal static async void ExitWithTransition(Func<Task> exit)
     {
         if (_leaving) return;
+        long generation = RavenServiceHooks.Generation;
+        bool Current() => generation == RavenServiceHooks.Generation;
         try
         {
             await ExitCoordinator.RunAsync(RavenTransitionHooks.FadeOutAsync,
-                RavenTransitionHooks.FadeInAsync, exit, CompleteExit);
+                () => Current() ? RavenTransitionHooks.FadeInAsync() : Task.CompletedTask,
+                () => Current() ? exit() : Task.CompletedTask,
+                () => { if (Current()) CompleteExit(); });
         }
         catch (Exception error) { Logger.Log($"[Raven] Exit transition failed: {error}"); }
-        finally { TryShow(); }
+        finally { if (Current()) TryShow(); }
     }
 
     private static void CompleteExit()

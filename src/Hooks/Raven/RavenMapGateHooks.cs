@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.Capstones;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Runs;
 
 namespace SurpriseRaven.Hooks.Raven;
 
@@ -17,19 +18,33 @@ internal static class RavenMapGateHooks
     private static bool _replaying;
     internal static bool HasDeferredMap => _deferred is not null && GodotObject.IsInstanceValid(_deferred);
 
+    internal static void Reset()
+    {
+        _deferred = null;
+        _openedFromTopBar = false;
+        _replaying = false;
+    }
+
     internal static bool ShouldDefer(bool singleplayer, bool hasOpportunity, bool hasPanel, bool replaying) =>
         singleplayer && !replaying && (hasOpportunity || hasPanel);
 
     [HarmonyPrefix]
     private static bool RavenMapOpenPrefix(NMapScreen __instance, bool isOpenedFromTopBar, ref NMapScreen __result)
     {
+        if (RunManager.Instance.DebugOnlyGetState()?.Players.FirstOrDefault() is not { } player
+            || !RavenServiceHooks.BindLivePlayer(player)) return true;
         if (!ShouldDefer(RavenServiceHooks.IsSingleplayer, RavenServiceHooks.State.HasOpportunity,
                 RavenOverlayHooks.HasOpenPanel, _replaying)) return true;
-        _deferred = __instance;
-        _openedFromTopBar = isOpenedFromTopBar;
+        Defer(__instance, isOpenedFromTopBar);
         __result = __instance;
         Logger.Log("[Raven] Map opening deferred until lamp opportunities finish.");
         return false;
+    }
+
+    internal static void Defer(NMapScreen map, bool fromTopBar)
+    {
+        _deferred = map;
+        _openedFromTopBar = fromTopBar;
     }
 
     internal static void TryResume()

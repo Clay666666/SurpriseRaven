@@ -16,6 +16,7 @@ internal static class RavenAcquisitionHooks
         private readonly Action _finish;
 
         internal bool IsDirectNeowAncient { get; }
+        internal long Generation { get; } = RavenServiceHooks.Generation;
 
         internal AcquisitionScope(Action? finish = null, bool isDirectNeowAncient = false)
         {
@@ -33,9 +34,10 @@ internal static class RavenAcquisitionHooks
     [HarmonyPrefix]
     private static void RavenObtainPrefix(Player player, RelicModel relic, out AcquisitionScope __state)
     {
-        __state = new AcquisitionScope(isDirectNeowAncient:
-            RavenAcquisitionSourceHooks.CaptureDirectNeowAncient(player, relic));
-        RavenServiceHooks.AcquisitionStarted();
+        bool live = RavenServiceHooks.BindLivePlayer(player);
+        bool neow = live && RavenAcquisitionSourceHooks.CaptureDirectNeowAncient(player, relic);
+        __state = new AcquisitionScope(live ? RavenServiceHooks.BeginObservedAcquisition() : static () => { },
+            neow);
     }
 
     [HarmonyPostfix]
@@ -55,7 +57,7 @@ internal static class RavenAcquisitionHooks
             var obtained = await original;
             try
             {
-                notify(obtained);
+                if (scope.Generation == RavenServiceHooks.Generation) notify(obtained);
             }
             catch (Exception error)
             {

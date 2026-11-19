@@ -15,7 +15,7 @@ public static partial class RavenServiceHooks
             var original = identity.Find(player.Relics);
             Logger.Log($"[Raven] Forfeit unclaimed original {pending.StakeId}, present={original is not null}, expiry={expire}.");
             return original is null ? Task.CompletedTask : RelicCmd.Remove(original);
-        }, () => RavenStorageHooks.Touch(player), expire);
+        }, () => PersistCurrent(player), expire);
     }
 
     private static Task ExpireOpportunitiesAsync(Player player)

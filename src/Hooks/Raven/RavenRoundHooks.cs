@@ -34,8 +34,8 @@ public static partial class RavenServiceHooks
             bool committed = false;
             await RunOperationAsync(player, state, async () =>
                 committed = await RavenTransactionHooks.CommitAsync(state, pending,
-                    () => RelicCmd.Remove(stake), () => RavenStorageHooks.Touch(player)));
-            if (!committed || state.Faulted || !ReferenceEquals(state.Pending, pending)) return null;
+                    () => RelicCmd.Remove(stake), () => PersistCurrent(player)));
+            if (!_lifetime.Owns(player) || !committed || state.Faulted || !ReferenceEquals(state.Pending, pending)) return null;
             Logger.Log($"[Raven] Submitted revision={state.Revision} round={state.Round} stake={stake.Id} result={pending.Outcome} consumed={pending.StakeConsumed}.");
             return BuildPlan(player, state);
         }
@@ -110,7 +110,7 @@ public static partial class RavenServiceHooks
         if (!ReferenceEquals(CurrentPlayer, player)) return;
         var state = RavenStorageHooks.Get(player);
         if (expectedRevision >= 0 && expectedRevision != state.Revision) return;
-        if (Busy) { _exitRequested = true; return; }
+        if (Busy) { _lifetime.ExitRequested = true; return; }
         await RunOperationAsync(player, state, () => AbandonCoreAsync(player, state, state.RoomKey != RoomKey(player)));
     }
 }

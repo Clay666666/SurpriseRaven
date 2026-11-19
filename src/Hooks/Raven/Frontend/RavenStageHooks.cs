@@ -19,6 +19,7 @@ internal sealed partial class RavenStageHooks : Control
     private readonly Control _fx = new() { Name = "Fx", Size = Design, MouseFilter = MouseFilterEnum.Ignore };
     private double _time;
     private bool _subscribed;
+    private readonly long _generation = RavenServiceHooks.Generation;
 
     internal RavenStageHooks(Player player, string? terminal, Func<bool>? canInteract = null,
         Action<string>? playAudio = null)
@@ -85,14 +86,14 @@ internal sealed partial class RavenStageHooks : Control
         Hud.OnHidden();
         if (_subscribed && Engine.GetMainLoop() is SceneTree tree) tree.ProcessFrame -= Tick;
         _subscribed = false;
-        RavenStageSession.TimelineActive = false;
+        if (_generation == RavenServiceHooks.Generation) RavenStageSession.TimelineActive = false;
         _timeline = null;
         _rewards.Clear();
     }
 
     private void Tick()
     {
-        if (!GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
+        if (_generation != RavenServiceHooks.Generation || !GodotObject.IsInstanceValid(this) || !IsInsideTree()) return;
         double delta = Math.Min(GetProcessDeltaTime(), 0.1);
         _time += delta;
         // The page is compressed vertically below the native top bar; counter it so the art stays round.

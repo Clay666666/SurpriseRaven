@@ -113,7 +113,7 @@ internal static partial class RavenOverlayHooks
         // NClickableControl.Enable defers SetProcessInput until the next tree iteration.
         var tree = (SceneTree)Engine.GetMainLoop();
         await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
-        return checks;
+        return checks + await CheckReloadLifetimesAsync();
     }
 
     private sealed class RewardExitScreenFixture : IDisposable
