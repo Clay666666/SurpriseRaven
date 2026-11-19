@@ -49,11 +49,10 @@ internal static class RavenBirdArtHooks
         Feather(new(-2, 1), new(67, 23), 7), Feather(new(2, -5), new(83, 19), 7),
         Feather(new(6, -11), new(95, 13), 7), Feather(new(12, -17), new(103, 6), 6.5f)
     ];
-    private static readonly Vector2 Eye = new(-63, -53);
-    private static readonly Vector2[] EyeShape = RavenPen.Curve(
-        [new(-68, -53), new(-65, -56), new(-59, -55), new(-57.5f, -54), new(-61, -50), new(-65, -50)], 3);
+    internal static Transform2D HeadTransform(float rotation) =>
+        new Transform2D(rotation, Neck) * new Transform2D(0, -Neck);
 
-    internal static void Paint(RavenPen pen, in RavenBirdPose pose)
+    internal static void Paint(RavenPen pen, in RavenBirdPose pose, Vector2 pupilOffset = default)
     {
         bool spread = pose.Flight >= 0.35f;
         if (spread) RavenBirdWingArtHooks.Paint(pen, pose, far: true);
@@ -66,7 +65,7 @@ internal static class RavenBirdArtHooks
         pen.Stroke(Torso, Ink, 3, true);
         Legs(pen, pose, Foot);
         if (!spread) PaintFoldedWing(pen.Around(Shoulder, -0.12f * pose.Ruffle - 0.3f * pose.Flight));
-        PaintHead(pen.Around(Neck, pose.Head), pose);
+        PaintHead(pen.With(HeadTransform(pose.Head)), pose, pupilOffset);
         if (spread) RavenBirdWingArtHooks.Paint(pen, pose, far: false);
     }
 
@@ -90,7 +89,7 @@ internal static class RavenBirdArtHooks
         pen.Stroke(Mantle, Ink, 2.6f, true);
     }
 
-    private static void PaintHead(RavenPen pen, in RavenBirdPose pose)
+    private static void PaintHead(RavenPen pen, in RavenBirdPose pose, Vector2 pupilOffset)
     {
         pen.Ramp(Head, Indigo, Shadow, new Vector2(-49, -65), new Vector2(-51, -17));
         pen.Fill([new(-72, -55), new(-64, -62), new(-54, -65), new(-41, -64), new(-32, -59),
@@ -110,10 +109,7 @@ internal static class RavenBirdArtHooks
         pen.Fill([new(-80, -48), new(-76, -50), new(-72, -50), new(-75, -47)], Ink);
         pen.Fill([new(-72, -55), new(-59, -59), new(-50, -55), new(-57, -50), new(-67, -48),
             new(-76, -45), new(-71, -50), new(-77, -49)], Shadow);
-        var lid = pen.With(new Transform2D(0, new Vector2(1, 1 - 0.88f * pose.Blink), 0, Eye) * new Transform2D(0, -Eye));
-        lid.Fill(EyeShape, new Color(0.98f, 0.64f, 0.22f));
-        lid.Fill(Ellipse(Eye, 2.1f, 2.7f, 12)[..^1], Ink);
-        if (pose.Blink < 0.5f) lid.Fill(Ellipse(Eye + new Vector2(-1, -1.3f), 1.1f, 1.1f, 8)[..^1], Cream);
+        RavenBirdEyeHooks.Paint(pen, pose.Blink, pupilOffset);
     }
 
     private static readonly (Vector2 Tucked, Vector2 Standing)[] Toes =

@@ -48,6 +48,7 @@ public static partial class RavenHeadlessTestsHooks
         Case("frontend assets intact and decodable from the mounted PCK", TestFrontendAssets);
         Case("round timeline order and frame independence", TestTimeline);
         Case("raven flight travel, wingbeat, smoothness and reduced motion", TestRavenMotion);
+        Case("raven gaze direction, eye bounds, mirroring and blink", TestRavenGaze);
         Case("entry probability and independent candle clip choices", TestAudioEvents);
         return new
         {

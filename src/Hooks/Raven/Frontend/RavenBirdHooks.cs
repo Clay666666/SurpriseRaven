@@ -10,12 +10,13 @@ internal sealed partial class RavenBirdHooks : Node2D
     private readonly RavenBirdMotion _motion = new(RavenLayout.Perch);
     private readonly Sprite2D _carry = new() { Visible = false, Position = RavenBirdArtHooks.CarryPoint };
     private float _carryScale = 1;
+    private Vector2 _pupilOffset;
 
     internal RavenBirdHooks()
     {
         Name = "Raven";
         AddChild(_carry);
-        Draw += () => RavenBirdArtHooks.Paint(new RavenPen(new RavenCanvasPainter(this)), _motion.Pose);
+        Draw += () => RavenBirdArtHooks.Paint(new RavenPen(new RavenCanvasPainter(this)), _motion.Pose, _pupilOffset);
         Apply();
     }
 
@@ -48,7 +49,17 @@ internal sealed partial class RavenBirdHooks : Node2D
     {
         _motion.Update(delta);
         Apply();
-        if (Visible) QueueRedraw();
+        if (!IsVisibleInTree()) return;
+
+        Vector2? pointer = null;
+        if (DisplayServer.HasFeature(DisplayServer.Feature.Mouse) && GetWindow().HasFocus())
+        {
+            var mouse = GetViewport().GetMousePosition();
+            if (GetViewportRect().HasPoint(mouse)) pointer = mouse;
+        }
+        var headToViewport = GetGlobalTransformWithCanvas() * RavenBirdArtHooks.HeadTransform(_motion.Pose.Head);
+        _pupilOffset = RavenBirdEyeHooks.Offset(headToViewport, pointer);
+        QueueRedraw();
     }
 
     private void Apply()
