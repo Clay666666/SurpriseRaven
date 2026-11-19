@@ -4,7 +4,9 @@
 
 惊喜渡鸦是《杀戮尖塔 2》的单人 Mod。捡到符合条件的遗物后，渡鸦会在当前房间亮起路灯。你可以赌一件已有的遗物，试试能否换来更高稀有度的奖励，也可能被渡鸦一口吞掉。
 
-**下载 0.4.3**　[玩家安装包（ZIP）](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.3/SurpriseRaven-0.4.3.zip) · [发布说明与校验值](https://github.com/Clay666666/SurpriseRaven/releases/tag/v0.4.3)
+**本地稳定版 0.4.4** 修复保存并重载后路灯无法重开，增强点灯音效。离线试听页可对照全部声音场景。
+
+**公开下载 0.4.3**　[玩家安装包（ZIP）](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.3/SurpriseRaven-0.4.3.zip) · [发布说明与校验值](https://github.com/Clay666666/SurpriseRaven/releases/tag/v0.4.3)
 
 ## 安装与升级
 

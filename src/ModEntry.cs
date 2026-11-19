@@ -12,6 +12,8 @@ public static class ModEntry
     public static readonly string ModId = "SurpriseRaven";
     public static readonly string ModName = "惊喜渡鸦 / SurpriseRaven";
     internal static readonly Assembly BuildAssembly = typeof(ModEntry).Assembly;
+    internal static string ReleaseVersion => BuildAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+        .InformationalVersion.Split('+')[0];
     internal static string BuildCommit =>
         BuildAssembly.GetCustomAttributes<AssemblyMetadataAttribute>()
             .FirstOrDefault(attribute => attribute.Key == "RavenSourceCommit")?.Value ?? "unrecorded";
@@ -24,7 +26,7 @@ public static class ModEntry
         Hooks.Raven.RavenServiceHooks.Initialize();
         var harmony = new Harmony(ModId);
         harmony.PatchAll();
-        Logger.Log($"[{ModName}] Mod loaded! Hooks active. Version={BuildAssembly.GetName().Version}, commit={BuildCommit}, DLL={BuildAssembly.Location}");
+        Logger.Log($"[{ModName}] Mod loaded! Hooks active. Version={ReleaseVersion}, Assembly={BuildAssembly.GetName().Version}, commit={BuildCommit}, DLL={BuildAssembly.Location}");
         HeadlessInitializationProbe.Complete(testRoot);
     }
 }

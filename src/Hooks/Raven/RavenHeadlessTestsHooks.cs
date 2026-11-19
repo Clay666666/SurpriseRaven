@@ -18,6 +18,7 @@ public static partial class RavenHeadlessTestsHooks
 
         _assertions = 0;
         Cases.Clear();
+        Case("RitsuLib current and target display names", TestRitsuLoadOrderName);
         Case("Excel weights, every outcome boundary and result RNG", TestOutcomeWeights);
         Case("rarity triggers, tiers and targets", TestRarities);
         Case("starter and upgraded starter stakes, rejection and restore", TestStakeEligibility);

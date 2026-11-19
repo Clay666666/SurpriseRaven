@@ -95,7 +95,7 @@ function Assert-VerifiedBuild($Build, [string]$Index, $Game, [string]$ModId, [st
     if ($manifest.id -ne $ModId -or $manifest.version -ne $Version) { throw 'Verified manifest does not match the current Mod identity.' }
     Assert-PckReport (Join-Path $stage "assets\$ModId") (Join-Path $stage "$ModId-pck-report.json") | Out-Null
     $pairs = Get-Content -LiteralPath $Index -Raw -Encoding UTF8 | ConvertFrom-Json
-    $assemblyVersion = [Version]$Version
+    $assemblyVersion = [Version]($Version.Split('-')[0])
     if ($assemblyVersion.Revision -lt 0) { $assemblyVersion = [Version]"$Version.0" }
     foreach ($release in @('0.111.0', '0.113.1')) {
         $pair = @($pairs | Where-Object Version -eq $release)
@@ -108,6 +108,7 @@ function Assert-VerifiedBuild($Build, [string]$Index, $Game, [string]$ModId, [st
         if ($environment.status -ne 'passed' -or $headless.status -ne 'passed' -or $headless.exit_code -ne 0 -or
             $headless.probe.display_server -ne 'headless' -or $headless.ritsulib.game_version -ne $release -or
             $headless.probe.mod_version -ne $assemblyVersion.ToString() -or
+            ($Version.Contains('-') -and (!$headless.probe.PSObject.Properties['release_version'] -or $headless.probe.release_version -cne $Version)) -or
             $headless.probe.source_commit -ne $Build.source_commit -or
             $headless.ritsulib.main_dll_sha256 -ne $hashes."$ModId.dll" -or
             $headless.ritsulib.main_pck_sha256 -ne $hashes."$ModId.pck") {

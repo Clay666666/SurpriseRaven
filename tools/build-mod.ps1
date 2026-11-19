@@ -175,6 +175,13 @@ function Install-StagedPayload($Result, $MainSpec) {
             Invoke-LoggedCommand 'powershell.exe' $checkArgs (Join-Path $runRoot 'ritsulib-runtime.log')
         }
         $modsRoot = Join-Path $GameDir 'mods'
+        if ($MainSpec.Id -eq 'SurpriseRaven') {
+            foreach ($legacyName in @('Sts2ModScaffold', 'Sts2ModScaffold.json', 'Sts2ModScaffold.dll', 'Sts2ModScaffold.pck')) {
+                if (Test-Path -LiteralPath (Join-Path $modsRoot $legacyName)) {
+                    throw 'The retired Sts2ModScaffold is still installed. Back up that Mod outside mods before upgrading to SurpriseRaven.'
+                }
+            }
+        }
         $backupRoot = Join-Path $artifactsRoot "backups\$runId"
         $records = @()
         foreach ($payload in $payloads) {

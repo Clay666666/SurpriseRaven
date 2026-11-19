@@ -8,7 +8,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RitsuLibAutoCopy>false</RitsuLibAutoCopy>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <Version>0.4.3</Version>
+    <Version>0.4.4</Version>
     <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
   </PropertyGroup>
 

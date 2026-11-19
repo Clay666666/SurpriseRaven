@@ -1,5 +1,7 @@
 # SurpriseRaven · 惊喜渡鸦
 
+Local stable build **0.4.4** restores the lamp after a reload and includes louder candle effects and an offline audio review.
+
 [简体中文](README.md)
 
 SurpriseRaven adds a relic exchange to single-player *Slay the Spire 2*. When you obtain a qualifying relic, a raven offers you a chance to gamble a relic you already own. It might bring back a better one, or swallow your offering.

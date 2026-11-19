@@ -64,6 +64,7 @@ internal static class HeadlessInitializationProbe
         {
             status = "passed",
             mod_id = ModEntry.ModId,
+            release_version = ModEntry.ReleaseVersion,
             mod_version = ModEntry.BuildAssembly.GetName().Version?.ToString(),
             source_commit = ModEntry.BuildCommit,
             display_server = DisplayServer.GetName(),
