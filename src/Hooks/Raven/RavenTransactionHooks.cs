@@ -44,7 +44,8 @@ internal static partial class RavenTransactionHooks
                 await remove();
                 pending.StakeConsumed = true;
             }
-            state.LastMessage = $"渡鸦叼走了 {pending.StakeTitle}……等它回来。";
+            if (pending.Shortage is not null) state.BlockedStakeIds.Add(pending.StakeId);
+            state.LastMessage = pending.Notice ?? $"渡鸦叼走了 {pending.StakeTitle}……等它回来。";
             CompleteBonusIfReady(state, pending);
         });
     }

@@ -20,6 +20,7 @@ public sealed class RavenState
     // Locked result: the stake is committed on drop and the output is granted on pickup.
     public RavenPendingRound? Pending { get; set; }
     public long OpportunityId { get; set; }
+    public HashSet<string> BlockedStakeIds { get; set; } = new(StringComparer.Ordinal);
     public bool HasOpportunity => PendingLights.Count > 0;
 }
 
@@ -33,6 +34,8 @@ public sealed class RavenPendingRound
     public bool BonusResolved { get; set; }
     public string? AncientId { get; set; }
     public string? Notice { get; set; }
+    public RavenOutcome? Shortage { get; set; }
+    internal int ExcludedCandidates { get; set; }
     public RavenOutcome Outcome { get; set; }
     public string StakeId { get; set; } = "";
     public int StakeIndex { get; set; } = -1;

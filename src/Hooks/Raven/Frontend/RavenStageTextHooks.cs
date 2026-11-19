@@ -9,11 +9,8 @@ internal sealed partial class RavenStageHooks
     private void Reveal(RavenRoundPlan plan)
     {
         PlayResultAudio(plan.DisplayOutcome);
-        if (plan.Outcome != RavenOutcome.Bonus)
-        {
-            var (title, color) = PopText(plan);
-            Hud.Pop(title, color, animate: !ReducedMotion);
-        }
+        var (title, color) = PopText(plan);
+        Hud.Pop(title, color, animate: !ReducedMotion);
         Hud.SetMessage(ResultMessage(plan));
         if (plan.Outcome is RavenOutcome.Upgrade or RavenOutcome.Bonus)
             RavenFxHooks.Confetti(_fx, RavenLayout.Altar + new Vector2(0, -40), particles: !ReducedMotion);
@@ -56,6 +53,7 @@ internal sealed partial class RavenStageHooks
         RavenOutcome.Upgrade => ("升值成功", Gold),
         RavenOutcome.Swap => ("等价互换", new Color(0.65f, 0.82f, 0.95f)),
         RavenOutcome.Downgrade => ("物品降档", new Color(0.75f, 0.68f, 0.9f)),
+        RavenOutcome.Bonus => ("奖励三选一!!!", new Color(0.75f, 0.68f, 0.9f)),
         _ => ("原件返还", Cream)
     };
 

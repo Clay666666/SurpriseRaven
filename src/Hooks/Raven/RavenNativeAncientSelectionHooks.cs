@@ -55,7 +55,7 @@ internal static class RavenNativeAncientSelectionHooks
         }
         try
         {
-            var obtained = RavenRelicHistoryHooks.GetObtainedRelicIds(player);
+            var obtained = RavenRelicAvailabilityHooks.GetUnavailableRelicIds(player, includeLamp: true);
             bool affected = RavenPoolHooks.AncientRelics(original).Any(r => obtained.Contains(r.Id));
             if (!affected && !lockUnchanged) return original;
             var chosen = affected ? Choose(original, RavenNativeAncientStorageHooks.Candidates(player, act, data),

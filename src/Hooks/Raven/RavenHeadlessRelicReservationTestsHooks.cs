@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Godot;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
@@ -51,6 +52,26 @@ public static partial class RavenHeadlessTestsHooks
         HashSet<ModelId> Snapshot() => RavenRelicAvailabilityHooks.GetUnavailableRelicIds(player, manager);
         Check(Snapshot().Contains(opener.Id) && !Snapshot().Contains(restocked.Id) && !entry.EnoughGold,
             "The player's Letter Opener stock must be reserved even if unaffordable.");
+        var bought = ModelDb.Relic<Strawberry>().ToMutable();
+        player.AddRelicInternal(bought, silent: true);
+        var otherStock = new MerchantRelicEntry(restocked, player);
+        relicEntries.Add(otherStock);
+        var offered = new[] { RelicRarity.Common, RelicRarity.Uncommon, RelicRarity.Rare, RelicRarity.Ancient }
+            .SelectMany(tier => RavenPoolHooks.CreateCandidates(player, tier, 1000, new Rng(301UL),
+                out _, manager: manager)).ToArray();
+        Check(offered.Length > 0 && offered.All(relic => relic.Id != bought.Id && relic.Id != opener.Id && relic.Id != restocked.Id),
+            "Buying A let the held A or unpurchased B/C enter the lamp's display candidates.");
+        var view = new RavenRewardsHooks(run, nativeFactory: () => null);
+        ((SceneTree)Engine.GetMainLoop()).Root.AddChild(view);
+        try
+        {
+            var shown = offered.Take(3).ToArray();
+            view.ShowRewards(shown, null, bonus: true);
+            Check(view.Count == shown.Length && shown.Select(relic => relic.Id).Distinct().Count() == shown.Length,
+                "The eligible shop fixture candidates did not reach the lamp reward view.");
+        }
+        finally { view.Free(); }
+        relicEntries.Remove(otherStock);
 
         var model = typeof(MerchantRelicEntry).GetProperty(nameof(MerchantRelicEntry.Model))!;
         model.SetValue(entry, null);
@@ -132,6 +153,14 @@ public static partial class RavenHeadlessTestsHooks
             catch (OperationCanceledException) { }
             Check(canceled.IsCanceled && RavenPoolHooks.CanClaim(player, relicC.ToMutable()),
                 "A canceled reward set lost its cancellation or left a reservation.");
+            var lamp = RavenStorageHooks.Get(player);
+            lamp.RoomKey = RavenServiceHooks.RoomKey(player);
+            lamp.Pending = new RavenPendingRound { Candidates = [relicC.ToMutable().ToSerializable()] };
+            var newer = new RewardsSet(player).WithCustomRewards([
+                CreateRelicReward(relicC.ToMutable(), player), new LinkedRewardSet([CreateRelicReward(relicB.ToMutable(), player)], player)]);
+            RavenRewardReservationHooks.FilterNewOffers(newer);
+            Check(newer.Rewards.Count == 0, "Later native offers included an earlier lamp or linked candidate.");
+            lamp.Pending = null;
 
             var other = Player.CreateForNewRun<Ironclad>(UnlockState.all, 68014UL);
             CreatePoolFixtureRun(other);
@@ -164,37 +193,4 @@ public static partial class RavenHeadlessTestsHooks
         finally { outerReservation.Release(); }
     }
 
-    private static RelicReward CreateRelicReward(RelicModel relic, Player player)
-    {
-        var type = typeof(RelicReward);
-        var withRng = type.GetConstructor([typeof(RelicModel), typeof(Player), typeof(Rng)]);
-        return (RelicReward)(withRng is not null ? withRng.Invoke([relic, player, null])
-            : type.GetConstructor([typeof(RelicModel), typeof(Player)])!.Invoke([relic, player]));
-    }
-
-    private static async Task CheckSavedRelicConflict(Player player, RelicModel relic)
-    {
-        foreach (var outcome in new[] { RavenOutcome.Swap, RavenOutcome.Bonus })
-        {
-            var (state, pending) = TransactionFixture(outcome);
-            pending.Candidates = [relic.ToMutable().ToSerializable()];
-            int removals = 0;
-            await RavenTransactionHooks.CommitAsync(state, pending, () =>
-            {
-                removals++;
-                return Task.CompletedTask;
-            }, () => { });
-            var restored = RoundTripPendingState(state);
-            var locked = restored.Pending!;
-            var result = await RavenTransactionHooks.CollectAsync(restored, locked, 0,
-                index => RavenPoolHooks.CanClaim(player, RelicModel.FromSerializable(locked.Candidates[index])),
-                _ => throw new InvalidOperationException("Reserved relic granted on restore."), () => { });
-            Check(result == RavenClaimResult.Invalidated && removals == (outcome == RavenOutcome.Swap ? 1 : 0),
-                "A conflicting saved candidate was granted, rerolled or consumed its input twice.");
-            if (outcome == RavenOutcome.Bonus)
-                Check(restored.Round == 0 && RavenTransactionHooks.CollectOriginal(restored, locked, true, () => { })
-                    == RavenClaimResult.Claimed, "Invalidating the saved bonus blocked original pickup.");
-            Check(restored.Round == 1 && restored.Pending is null, "The invalidated round did not finish exactly once.");
-        }
-    }
 }

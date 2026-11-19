@@ -19,6 +19,7 @@ public static partial class RavenServiceHooks
         if (_initialized) return;
         RavenStorageHooks.Initialize();
         RavenNativeAncientStorageHooks.Initialize();
+        RavenGameplayOddsHooks.Initialize();
         if (Engine.GetMainLoop() is not SceneTree tree) throw new InvalidOperationException("No SceneTree.");
         tree.ProcessFrame += Tick;
         _initialized = true;
@@ -53,13 +54,13 @@ public static partial class RavenServiceHooks
         if (!BindLivePlayer(player) || SuppressAcquisitions || RavenRulesHooks.IsExcluded(relic)
             || !RavenRulesHooks.GrantsOpportunity(relic.Rarity)) return;
         var state = RavenStorageHooks.Get(player);
-        RavenOpportunityQueueHooks.Enqueue(state, RavenStorageHooks.Rng(player, "initial").NextInt(0, 6), RoomKey(player));
+        RavenOpportunityQueueHooks.Enqueue(state, RavenGameplayOddsHooks.InitialLights(RavenStorageHooks.Rng(player, "initial")), RoomKey(player));
         SaveAndNotify(player);
         Logger.Log($"[Raven] Opportunity: {relic.Id}, count={state.PendingLights.Count}, lights={state.Lights}.");
     }
 
     public static IReadOnlyList<RelicModel> GetStakes(Player player) => player.Relics
-        .Where(RavenStakeEligibilityHooks.CanStake).ToList();
+        .Where(relic => RavenStakeEligibilityHooks.CanStake(player, relic)).ToList();
 
     private static void Tick()
     {
@@ -80,6 +81,12 @@ public static partial class RavenServiceHooks
             if (!Busy && !state.Faulted && state.HasOpportunity && state.RoomKey != RoomKey(player))
             {
                 _ = RavenOverlayHooks.RunServiceOperation(() => ExpireOpportunitiesAsync(player), !RavenOverlayHooks.HasOpenPanel);
+                return;
+            }
+            if (state.Pending is { } offer && !RavenStageSession.TimelineActive && CanStart(player, state, state.Revision)
+                && HasUnavailableOffer(player, offer))
+            {
+                _ = RavenOverlayHooks.RunServiceOperation(() => ReturnUnavailableOfferAsync(player, state, offer));
                 return;
             }
             if (!Busy && RavenOpportunityQueueHooks.Flush(state, RoomKey(player))) SaveAndNotify(player);

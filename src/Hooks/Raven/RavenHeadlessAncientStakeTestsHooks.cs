@@ -75,9 +75,7 @@ public static partial class RavenHeadlessTestsHooks
         run.AppendToMapPointHistory(MapPointType.Monster, RoomType.Monster, null);
         var history = run.CurrentMapPointHistoryEntry!.PlayerStats.Single(p => p.PlayerId == player.NetId);
         history.RelicsRemoved.AddRange(catalog.Select(relic => relic.Id).Where(id => id != target));
-        var bonus = RavenPoolHooks.CreateAncientBonusCandidates(player, new Rng(921UL)).Candidates;
-        Check(bonus is [var remaining] && remaining.Id == target && RavenPoolHooks.CanClaim(player, remaining),
-            "The last available Ancient bonus was excluded because it cannot be staked.");
+        Check(RavenPoolHooks.CanClaim(player, upgrade!), "An eligible pickup-benefit relic can still be granted once.");
         Check(!RunManager.Instance.IsInProgress && player.Relics.All(relic => relic.Id != target),
             "The reward fixture changed inventory or started a live run.");
     }

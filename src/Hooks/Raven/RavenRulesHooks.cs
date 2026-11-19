@@ -47,17 +47,15 @@ public static class RavenRulesHooks
 
     public static int[] GetWeights(int lights, RelicRarity rarity) => (int[])GetWeightRow(lights, rarity).Clone();
 
-    private static int[] GetWeightRow(int lights, RelicRarity rarity)
+    internal static Dictionary<string, int[][]> DefaultOutcomes() => new(StringComparer.Ordinal)
     {
-        var table = Tier(rarity) switch
-        {
-            RelicRarity.Ancient => AncientWeights,
-            RelicRarity.Rare => RareWeights,
-            RelicRarity.Uncommon => UncommonWeights,
-            _ => CommonWeights
-        };
-        return table[Math.Clamp(lights, 0, table.Length - 1)];
-    }
+        [nameof(RelicRarity.Common)] = CommonWeights,
+        [nameof(RelicRarity.Uncommon)] = UncommonWeights,
+        [nameof(RelicRarity.Rare)] = RareWeights,
+        [nameof(RelicRarity.Ancient)] = AncientWeights
+    };
+
+    private static int[] GetWeightRow(int lights, RelicRarity rarity) => RavenGameplayOddsHooks.Row(Tier(rarity), lights);
 
     public static RelicRarity Tier(RelicRarity rarity) => rarity switch
     {
@@ -77,18 +75,16 @@ public static class RavenRulesHooks
         return SelectOutcome(weights, roll);
     }
 
-    internal static RavenOutcome Roll(int lights, Rng rng, RelicRarity rarity)
+    internal static RavenOutcome Roll(int lights, Rng rng, RelicRarity rarity) => Roll(lights, rng, rarity, out _);
+
+    internal static RavenOutcome Roll(int lights, Rng rng, RelicRarity rarity, out int roll)
     {
         var weights = GetWeightRow(lights, rarity);
-        return SelectOutcome(weights, rng.NextInt(0, weights.Sum()));
+        roll = rng.NextInt(0, weights.Sum());
+        return SelectOutcome(weights, roll);
     }
 
-    private static RavenOutcome SelectOutcome(int[] weights, int roll)
-    {
-        int index = 0;
-        for (; index < weights.Length - 1 && roll >= weights[index]; index++) roll -= weights[index];
-        return (RavenOutcome)index;
-    }
+    private static RavenOutcome SelectOutcome(int[] weights, int roll) => (RavenOutcome)RavenGameplayOddsHooks.Select(weights, roll);
 
     public static RelicRarity Target(RelicRarity rarity, RavenOutcome outcome)
     {
@@ -114,7 +110,7 @@ public static class RavenRulesHooks
     public static int NextLights(int lights, int roll)
     {
         if (roll is < 0 or >= 100) throw new ArgumentOutOfRangeException(nameof(roll));
-        return Math.Clamp(lights + (roll < 50 ? 1 : 0), 0, 6);
+        return Math.Clamp(lights + (roll < RavenGameplayOddsHooks.LightUpPercent ? 1 : 0), 0, 6);
     }
 
     public static string DescribeOdds(int lights) => DescribeOdds(lights, RelicRarity.Uncommon);
@@ -128,6 +124,6 @@ public static class RavenRulesHooks
         var outcomes = Enumerable.Range(0, weights.Length).Where(i => weights[i] > 0)
             .Select(i => $"{labels[i]} {(100m * weights[i] / total).ToString("0.##", CultureInfo.InvariantCulture)}%");
         return string.Join(" · ", outcomes)
-            + "\n每轮未吞噬时有50%概率亮一灯，满灯仍可继续。";
+            + $"\n每轮未吞噬时有{RavenGameplayOddsHooks.LightUpPercent}%概率亮一灯，满灯仍可继续。";
     }
 }

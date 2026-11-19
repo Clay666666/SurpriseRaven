@@ -47,12 +47,6 @@ internal sealed partial class RavenLampPanelHooks
             if (plan.OriginalReturn is { } original)
                 AddRelic(entries, original, "取回原遗物", () => RunOperation(() => RavenServiceHooks.CollectAsync(_player,
                     new RavenPickupRequest(RavenPickupKind.Original), revision)));
-            if (plan.Outcome == RavenOutcome.Bonus && RavenRewardsHooks.ChoiceText(plan.Rewards.Count) is { Length: > 0 } title)
-            {
-                var label = Text(title, 24);
-                label.HorizontalAlignment = HorizontalAlignment.Center;
-                entries.AddChild(label);
-            }
             for (int i = 0; i < plan.Rewards.Count; i++)
             {
                 int index = i;

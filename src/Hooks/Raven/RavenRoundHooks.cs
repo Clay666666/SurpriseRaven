@@ -23,7 +23,7 @@ public static partial class RavenServiceHooks
     // This is the only submission entry point: a displayable plan means the stake has committed.
     public static async Task<RavenRoundPlan?> SubmitStakeAsync(Player player, RelicModel stake, long expectedRevision = -1)
     {
-        if (!RavenStakeEligibilityHooks.CanStake(stake) || player is null) return null;
+        if (player is null || !RavenStakeEligibilityHooks.CanStake(player, stake)) return null;
         var state = RavenStorageHooks.Get(player);
         if (!CanStart(player, state, expectedRevision) || state.Pending is not null
             || !GetStakes(player).Any(r => ReferenceEquals(r, stake))) return null;
@@ -50,36 +50,44 @@ public static partial class RavenServiceHooks
     private static RavenPendingRound CreatePendingRound(Player player, RavenState state, RelicModel stake)
     {
         var outcome = RavenRulesHooks.Roll(state.Lights,
-            RavenStorageHooks.Rng(player, "outcome"), stake.Rarity);
+            RavenStorageHooks.Rng(player, "outcome"), stake.Rarity, out int roll);
+        var pending = CreateOffer(player, stake, outcome, RavenStorageHooks.Rng(player, "reward"));
+        pending.NextLights = outcome == RavenOutcome.Swallow ? state.Lights
+            : RavenRulesHooks.NextLights(state.Lights, RavenStorageHooks.Rng(player, "lights").NextInt(0, 100));
+        Logger.Log($"[Raven] Draw stake={stake.Id} lights={state.Lights} roll={roll} rolled={outcome} target={pending.Target} " +
+            $"result={pending.Outcome} candidates={pending.Candidates.Count} excluded={pending.ExcludedCandidates} shortage={pending.Shortage}.");
+        return pending;
+    }
+
+    internal static RavenPendingRound CreateOffer(Player player, RelicModel stake, RavenOutcome outcome, MegaCrit.Sts2.Core.Random.Rng rng)
+    {
         var target = RavenRulesHooks.Target(stake.Rarity, outcome);
         List<RelicModel> candidates = [];
         string? ancientId = null;
+        int excluded = 0;
         if (outcome == RavenOutcome.Bonus && target == RelicRarity.Ancient)
-            (ancientId, candidates) = RavenPoolHooks.CreateAncientBonusCandidates(player,
-                RavenStorageHooks.Rng(player, "reward"), stake.Id.ToString());
+            (ancientId, candidates) = RavenPoolHooks.CreateAncientBonusCandidates(player, rng, out excluded, stake.Id.ToString());
         else if (outcome is not (RavenOutcome.Swallow or RavenOutcome.Keep))
-            candidates = RavenPoolHooks.CreateCandidates(player, target, outcome == RavenOutcome.Bonus ? 3 : 1,
-                RavenStorageHooks.Rng(player, "reward"), stake.Id.ToString());
-        if (outcome is not (RavenOutcome.Swallow or RavenOutcome.Keep) && candidates.Count == 0)
-            outcome = RavenOutcome.Keep;
-        int next = outcome == RavenOutcome.Swallow ? state.Lights
-            : RavenRulesHooks.NextLights(state.Lights, RavenStorageHooks.Rng(player, "lights").NextInt(0, 100));
-        return new RavenPendingRound
+            candidates = RavenPoolHooks.CreateCandidates(player, target, outcome == RavenOutcome.Bonus ? 3 : 1, rng, out excluded, stake.Id.ToString());
+        var pending = new RavenPendingRound
         {
             SettlementVersion = RavenTransactionHooks.CurrentVersion,
             OriginalState = outcome == RavenOutcome.Bonus ? RavenOriginalState.Pending : RavenOriginalState.None,
             AncientId = ancientId,
             StakeSnapshot = stake.ToSerializable(), Outcome = outcome, StakeId = stake.Id.ToString(),
             StakeIndex = player.Relics.ToList().IndexOf(stake), StakeTitle = stake.Title.GetFormattedText(),
-            Target = target, NextLights = next, Candidates = candidates.Select(r => r.ToSerializable()).ToList()
+            Target = target, ExcludedCandidates = excluded, Candidates = candidates.Select(r => r.ToSerializable()).ToList()
         };
+        if (outcome == RavenOutcome.Bonus ? candidates.Count != 3 : IsReplacement(outcome) && candidates.Count == 0)
+            RavenTransactionHooks.MarkShortage(pending, outcome, returned: true);
+        return pending;
     }
 
     public static RavenRoundPlan? GetPendingPlan(Player player)
     {
         var state = RavenStorageHooks.Get(player);
         return state.Faulted || state.InFlight || state.Pending is not { } pending
-            || !RavenTransactionHooks.IsReady(pending) ? null : BuildPlan(player, state);
+            || !RavenTransactionHooks.IsReady(pending) || HasUnavailableOffer(player, pending) ? null : BuildPlan(player, state);
     }
 
     internal static RavenRoundPlan BuildPlan(Player player, RavenState state)

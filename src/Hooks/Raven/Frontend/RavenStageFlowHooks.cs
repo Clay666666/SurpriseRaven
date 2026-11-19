@@ -137,11 +137,15 @@ internal sealed partial class RavenStageHooks
                 break;
             case RavenCue.Drop:
                 _bird.Carry(null);
+                if (ReferenceEquals(RavenServiceHooks.CurrentPlayer, _player)
+                    && RavenServiceHooks.GetPendingPlan(_player) is null) break;
                 _rewards.ShowRewards(plan.Rewards, _bird.BeakPosition, plan.OriginalReturn, plan.Outcome == RavenOutcome.Bonus,
                     reducedMotion: ReducedMotion);
                 _rewardsShown = true;
                 break;
             case RavenCue.Reveal:
+                if (plan.Outcome != RavenOutcome.Swallow && ReferenceEquals(RavenServiceHooks.CurrentPlayer, _player)
+                    && RavenServiceHooks.GetPendingPlan(_player) is null) break;
                 Reveal(plan);
                 break;
             case RavenCue.Landed:

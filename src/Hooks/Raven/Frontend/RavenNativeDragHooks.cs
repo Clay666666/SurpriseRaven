@@ -36,7 +36,7 @@ internal sealed partial class RavenNativeDragHooks : IDisposable
     internal RavenNativeDragHooks(Player player, Control panel, RavenSacrificeTargetHooks target,
         Func<bool> allowed, Action<RelicModel, Vector2, long> submit)
         : this(panel, target, allowed,
-            relic => player.Relics.Any(r => ReferenceEquals(r, relic)) && RavenStakeEligibilityHooks.CanStake(relic),
+            relic => player.Relics.Any(r => ReferenceEquals(r, relic)) && RavenStakeEligibilityHooks.CanStake(player, relic),
             () => (RavenServiceHooks.State.Revision, RavenServiceHooks.State.OpportunityId), submit)
     {
         _player = player;

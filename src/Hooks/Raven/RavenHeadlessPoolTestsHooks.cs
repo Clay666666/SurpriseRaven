@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Random;
+using MegaCrit.Sts2.Core.Rewards;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Runs.History;
@@ -45,8 +46,11 @@ public static partial class RavenHeadlessTestsHooks
         Check(!RavenPoolHooks.CanClaim(player, picked.ToMutable()) && RavenPoolHooks.CanClaim(player, skipped.ToMutable()),
             "Picked and skipped candidate eligibility differs from history.");
         var allCommon = RavenPoolHooks.CreateCandidates(player, skipped.Rarity, 100, new Rng(172UL));
-        Check(allCommon.Any(relic => relic.Id == skipped.Id) && allCommon.All(relic => !obtained.Contains(relic.Id)),
-            "Catalog generation did not apply historical ownership or dropped a skipped candidate.");
+        Check(allCommon.Any(relic => relic.Id == skipped.Id) && allCommon.All(relic => !player.Relics.Any(held => held.Id == relic.Id)),
+            "Catalog generation emitted held stock or dropped a skipped candidate.");
+        entry.RelicsRemoved.Add(skipped.Id);
+        Check(RavenPoolHooks.CanClaim(player, skipped.ToMutable()) && !RavenPoolHooks.CanClaim(player, picked.ToMutable()),
+            "A historical passive relic must return while a historical pickup benefit stays blocked.");
 
         var neow = ModelDb.Event<Neow>().AllPossibleOptions.Select(option => option.Relic).OfType<RelicModel>()
             .DistinctBy(relic => relic.Id).ToArray();
@@ -66,19 +70,21 @@ public static partial class RavenHeadlessTestsHooks
         var replay = RavenPoolHooks.CreateAncientBonusCandidates(player, new Rng(244UL));
         var group = sources.Single(source => source.Id.ToString() == sample.AncientId);
         var groupIds = RavenPoolHooks.AncientRelics(group).Select(relic => relic.Id).ToHashSet();
-        Check(sample.Candidates.Count is >= 1 and <= 3 && sample.Candidates.All(relic => groupIds.Contains(relic.Id))
+        Check(sample.Candidates.Count == 3 && sample.Candidates.All(relic => groupIds.Contains(relic.Id))
             && sample.Candidates.DistinctBy(relic => relic.Id).Count() == sample.Candidates.Count,
             "Ancient bonus mixed sources or repeated a relic.");
         Check(replay.AncientId == sample.AncientId && sample.Candidates.Select(relic => relic.Id)
             .SequenceEqual(replay.Candidates.Select(relic => relic.Id)), "Seeded selection did not replay.");
         var keep = sample.Candidates[0].Id;
-        entry.RelicsRemoved.AddRange(sources.SelectMany(RavenPoolHooks.AncientRelics)
-            .Where(relic => relic.Id != keep).Select(relic => relic.Id).Distinct());
-        var one = RavenPoolHooks.CreateAncientBonusCandidates(player, new Rng(245UL));
-        Check(one.Candidates.Select(relic => relic.Id).SequenceEqual([keep]), "A short group should give its last eligible relic.");
-        entry.RelicsRemoved.Add(keep);
-        var empty = RavenPoolHooks.CreateAncientBonusCandidates(player, new Rng(245UL));
-        Check(empty.AncientId is null && empty.Candidates.Count == 0, "An exhausted pool regenerated an obtained relic.");
+        var blocked = sources.SelectMany(RavenPoolHooks.AncientRelics).DistinctBy(relic => relic.Id)
+            .Where(relic => relic.Id != keep).Select(relic => (Reward)CreateRelicReward(relic.ToMutable(), player)).ToList();
+        var reservation = RavenRewardReservationHooks.Track(new RewardsSet(player).WithCustomRewards(blocked));
+        try
+        {
+            var one = RavenPoolHooks.CreateAncientBonusCandidates(player, new Rng(245UL));
+            Check(one.AncientId is null && one.Candidates.Count == 0, "A short group emitted a partial bonus.");
+        }
+        finally { reservation.Release(); }
         Check(!RunManager.Instance.IsInProgress, "History fixture started a live run.");
     }
 

@@ -35,24 +35,22 @@ internal static partial class RavenOverlayHooks
             .Where(root => !root.IsQueuedForDeletion()).SelectMany(root => root.GetChildren().OfType<NTreasureRoomRelicHolder>())
             .Where(holder => !holder.IsQueuedForDeletion()).ToDictionary(holder => holder.Relic.Model.Id);
         void Pick(NTreasureRoomRelicHolder holder) => holder.EmitSignal(NClickableControl.SignalName.Released, holder);
-        void CheckChoiceTitle(string expected, IReadOnlyList<RelicModel> visibleCandidates)
-        {
-            var title = rewards.GetNode<Label>("ChoiceTitle");
-            CheckView(rewards.GetChildren().OfType<Label>().Count() == 1 && title.Text == expected
-                && title.Visible == (expected.Length > 0), "Bonus has exactly one correctly updated group title.");
-            CheckView(title.MouseFilter == Control.MouseFilterEnum.Ignore && title.FocusMode == Control.FocusModeEnum.None,
-                "The title cannot intercept pickup or focus navigation.");
-            if (expected.Length == 0) return;
-            var shown = Slots();
-            var bounds = visibleCandidates.Select(relic => ((Control)shown[relic.Id].GetParent()).GetGlobalRect()).ToArray();
-            float center = (bounds.Min(rect => rect.Position.X) + bounds.Max(rect => rect.End.X)) / 2;
-            CheckView(Mathf.IsEqualApprox(title.GetGlobalRect().GetCenter().X, center)
-                && title.GetGlobalRect().End.Y <= bounds.Min(rect => rect.Position.Y),
-                "The group title is centered above the actual candidates under page compression.");
-        }
         try
         {
+            var first = new Control();
+            var duplicate = new Control();
+            viewport.AddChild(first);
+            viewport.AddChild(duplicate);
+            RavenInventoryUniquenessHooks.Apply([(first, original.Id), (duplicate, original.Id)]);
+            await Frame();
+            CheckView(first.IsVisibleInTree() && !duplicate.IsVisibleInTree(), "Duplicate top holder appeared in the first visible frame.");
+            RavenInventoryUniquenessHooks.Apply([(duplicate, original.Id)]);
+            first.Free();
+            await Frame();
+            CheckView(duplicate.IsVisibleInTree(), "The remaining holder was not promoted after removal.");
+            duplicate.Free();
             var bonus = new RavenRoundPlan(RavenOutcome.Bonus, null, candidates, default, 0, 1, original);
+            CheckView(RavenStageHooks.PopText(bonus).Item1 == "奖励三选一!!!", "Bonus uses the central result pop.");
             const string warning = " · 离开将放弃未领取的遗物";
             CheckView(RavenStageHooks.PickupCaption(bonus) == "取回原件，并任选一件奖励" + warning
                 && RavenStageHooks.PickupCaption(bonus with { OriginalReturn = null }) == "任选一件奖励" + warning
@@ -71,7 +69,7 @@ internal static partial class RavenOverlayHooks
             rewards.Interactive = true;
             await Frame();
             var slots = Slots();
-            CheckChoiceTitle("三选一！！！", candidates);
+            CheckView(!rewards.GetChildren().OfType<Label>().Any(), "No title remains above the reward slots.");
             CheckView(slots.Values.All(holder => !holder.GetParent().GetChildren().OfType<Label>().Any()),
                 "Original and candidate icons have no individual captions.");
             var focusedCandidate = slots[candidates[1].Id];
@@ -97,7 +95,6 @@ internal static partial class RavenOverlayHooks
             rewards.ShowRewards(candidates, null, null, bonus: true);
             rewards.Interactive = true;
             var remaining = Slots();
-            CheckChoiceTitle("三选一！！！", candidates);
             CheckView(rewards.Count == 3 && candidates.All(relic => ReferenceEquals(slots[relic.Id], remaining[relic.Id])
                 && remaining[relic.Id].GlobalPosition.IsEqualApprox(candidatePositions[relic.Id])),
                 "Returning the original keeps every candidate node and position intact.");
@@ -106,7 +103,6 @@ internal static partial class RavenOverlayHooks
             CheckView(picked.Count == 2 && picked[^1] == new RavenPickupRequest(RavenPickupKind.Candidate, 1),
                 "The removed original is inert and a bonus candidate retains its service index.");
             rewards.Clear();
-            CheckChoiceTitle("", []);
             await Frame();
 
             rewards.ShowRewards(candidates, null, original, bonus: true);
@@ -117,7 +113,6 @@ internal static partial class RavenOverlayHooks
             Pick(slots[candidates[2].Id]);
             rewards.ShowRewards([], null, original, bonus: true);
             rewards.Interactive = true;
-            CheckChoiceTitle("", []);
             CheckView(rewards.Count == 1 && ReferenceEquals(rewards.FirstSlot, originalHolder)
                 && originalHolder.GlobalPosition.IsEqualApprox(originalPosition),
                 "Choosing the bonus first leaves the same original holder waiting in place.");
@@ -133,16 +128,12 @@ internal static partial class RavenOverlayHooks
             slots = Slots();
             rewards.ShowRewards(candidates[1..], null, original, bonus: true);
             rewards.Interactive = true;
-            CheckChoiceTitle("二选一！！！", candidates[1..]);
             Pick(slots[candidates[2].Id]);
             CheckView(picked[^1] == new RavenPickupRequest(RavenPickupKind.Candidate, 1),
                 "Candidate invalidation updates retained callbacks to the new candidate indices.");
             rewards.ShowRewards(candidates[2..], null, original, bonus: true);
-            CheckChoiceTitle("", candidates[2..]);
             rewards.ShowRewards(candidates, null, original, bonus: true);
-            CheckChoiceTitle("三选一！！！", candidates);
             rewards.ShowRewards(candidates, null, bonus: false);
-            CheckChoiceTitle("", candidates);
             rewards.Clear();
             await Frame();
             rewards.ShowRewards([], null, original, bonus: true);
