@@ -70,7 +70,7 @@ function makePlan(pack, versionName, s, durations) {
             if (missingLead) mark(start, "前奏不可用 · 立即尝试鸦叫");
             if (kind === "interrupt") {
                 mark(start + 0.10, "重载开始");
-                if (versionName === "candidate" && duration > 0) {
+                if (duration > 0) {
                     mark(start + duration, "上局前奏结束 · 取消续播");
                     return start + duration + 0.35;
                 }
@@ -196,7 +196,7 @@ async function setupPlayer() {
                 source.onended = () => { source.disconnect(); gain.disconnect(); };
                 source.start(start + e.at); running.push(source);
             }
-            const version = versionName === "candidate" ? "B · 0.4.4" : "A · 0.4.3";
+            const version = versionName === "candidate" ? "B · 调整后" : "A · 0.4.4";
             $("summary").textContent = version + (p.audio.length ? "　" + p.audio.length + " 次播放" : "　静音场景") + "　总长 " + p.duration.toFixed(2) + " s";
             $("progress").max = p.duration;
             let last = -2;

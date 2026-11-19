@@ -7,6 +7,7 @@ internal static partial class RavenOverlayHooks
     internal static async Task<int> RunNodeChecksAsync()
     {
         int checks = RunNodeChecks();
+        checks += await RunReplayRecoveryChecksAsync();
         checks += await RunRelicLayoutChecksAsync();
         checks += await RunNativeDragChecksAsync();
         checks += await RunRewardChecksAsync();

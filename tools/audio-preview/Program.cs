@@ -6,7 +6,7 @@ using SurpriseRaven.Hooks.Raven;
 
 if (args.Length != 3)
 {
-    Console.Error.WriteLine("Usage: RavenAudioPreview <0.4.3 staged raven directory> <candidate staged raven directory> <output.html>");
+    Console.Error.WriteLine("Usage: RavenAudioPreview <0.4.4 staged raven directory> <candidate staged raven directory> <output.html>");
     return 2;
 }
 
@@ -42,17 +42,22 @@ object ReadVersion(string directory, bool isCandidate)
     var referenced = events.SelectMany(e => e.Value!["clips"]!.AsArray()).Select(c => (string)c!).ToHashSet();
     if (events.Count != 10 || clips.Count != 22 || !referenced.SetEquals(clips.Keys))
         throw new InvalidDataException("Every one of the 22 staged clips must belong to the 10 sound events.");
-    if (!isCandidate && (clips["sfx.swap_reward"] != "1c1be94aba650f6ea40806eb010b6ffc3c0930dfcbe89c877f3bad80317725ee"
-        || (float?)events["candle.light"]!["gainDb"] is > 0 || config["timings"]!["swapSoundLead"] != null))
-        throw new InvalidDataException("The baseline must use the original 0.4.3 audio and gain.");
     var t = config["timings"]!.Deserialize<RavenTimings>(options)!;
-    if (isCandidate && (!((float?)events["candle.light"]!["gainDb"] > 0) || t.SwapSoundLead <= 0))
-        throw new InvalidDataException("The candidate is missing the ignition gain or the new swap cue.");
+    double expectedIgnition = isCandidate ? 0.84 : 0.8;
+    double expectedUpgrade = isCandidate ? 0.90 : 1;
+    if ((double?)events["candle.light"]!["volume"] != expectedIgnition ||
+        ((double?)events["result.upgrade_sfx"]!["volume"] ?? 1) != expectedUpgrade || t.SwapSoundLead <= 0 ||
+        (double?)events["candle.light"]!["gainDb"] != 6)
+        throw new InvalidDataException("The staged sound mix does not match the selected release.");
 
     var timelines = new Dictionary<string, Dictionary<string, double>>();
     foreach (var (name, swallow, light, swap) in new[] {
         ("return", false, false, false), ("returnLight", false, true, false),
         ("swap", false, false, true), ("swapLight", false, true, true), ("swallow", true, false, false) })
+    {
         timelines[name] = RavenTimeline.Schedule(t, swallow, light, swap).ToDictionary(c => c.Cue.ToString(), c => c.At);
+        if (!isCandidate && light)
+            timelines[name]["Ignite"] = timelines[name]["Gone"] + t.IgniteStagger; // Actual 0.4.4 timing.
+    }
     return new { events, volume = (double)config["volume"]!, swapSoundLead = t.SwapSoundLead, clips, timelines };
 }

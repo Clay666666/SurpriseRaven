@@ -2,7 +2,7 @@
     "id": "SurpriseRaven",
     "name": "惊喜渡鸦 / SurpriseRaven",
     "pck_name": "SurpriseRaven",
-    "version": "0.4.4",
+    "version": "0.4.5-beta.1",
     "author": "VibeCoding",
     "description": "渡鸦路灯：单机遗物赌博、六灯风险与三选一奖励（2D 渡鸦路灯前端）",
     "has_dll": true,

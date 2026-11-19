@@ -62,9 +62,10 @@ public sealed class RavenTimeline
             (0, RavenCue.Offer), (takeoff, RavenCue.Takeoff), (takeoff + t.FlyAway * t.GrabFraction, RavenCue.Grab),
             (takeoff + t.FlyAway, RavenCue.Gone)
         ];
+        double candleChange = takeoff + t.SwallowExtinguishAt;
         if (swallow)
         {
-            cues.Add((takeoff + t.SwallowExtinguishAt, RavenCue.Extinguish));
+            cues.Add((candleChange, RavenCue.Extinguish));
             cues.Add((takeoff + t.SwallowVoiceAt, RavenCue.SwallowVoice));
             cues.Add((takeoff + Math.Max(t.SwallowEnd, t.FlyAway), RavenCue.Finish));
         }
@@ -74,10 +75,9 @@ public sealed class RavenTimeline
             double back = gone + away;
             if (gainsLight)
             {
-                double ignite = gone + t.IgniteStagger;
-                cues.Add((ignite, RavenCue.Ignite));
+                cues.Add((candleChange, RavenCue.Ignite));
                 // Give the flame time to build even when custom timings shorten the bird's absence.
-                back = Math.Max(back, ignite + 0.25);
+                back = Math.Max(back, candleChange + 0.25);
             }
             double reveal = back + t.DropAt + t.DropFall;
             double landed = back + t.ReturnFly;

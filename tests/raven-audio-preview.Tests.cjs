@@ -88,7 +88,7 @@ async function verify(html, browserPath) {
             }
             return stats;
         })()`);
-        assert.equal(Object.keys(measured).length,24);
+        assert.equal(Object.keys(measured).length,22);
         assert(Object.values(measured).every(c=>c.peak>0 && c.duration>0));
         const durations = Object.fromEntries(Object.entries(measured).map(([k,x])=>[k,x.duration]));
         const scenes = await evaluate("Array.from(document.querySelectorAll('#scene option'),o=>o.value)");
@@ -131,18 +131,27 @@ async function verify(html, browserPath) {
         const gap = caws.at+measured[caws.hash].first-lead.at-measured[lead.hash].last;
         assert(Math.abs(onsetRelativeToDrop+0.20)<=0.025);
         assert(gap>=-0.01 && gap<=0.09);
-        assert(Math.abs(20*Math.log10(c.audio[0].gain/a.audio[0].gain)-6)<0.001);
+        const ignitionRatio = c.audio[0].gain / a.audio[0].gain;
+        const effectGain = version => plan({scene:"upgrade",light:"same"},version).audio.find(x=>x.event==="result.upgrade_sfx").gain;
+        const voiceGain = version => plan({scene:"upgrade",light:"same"},version).audio.find(x=>x.event==="result.upgrade").gain;
+        const upgradeRatio = effectGain("candidate") / effectGain("baseline");
+        assert(Math.abs(ignitionRatio - 1.05)<1e-6);
+        assert(Math.abs(upgradeRatio - 0.90)<1e-6);
+        assert.equal(voiceGain("candidate"), voiceGain("baseline"));
+        assert(Math.abs(a.audio[0].at-3.22)<1e-6);
+        assert(Math.abs(c.audio[0].at-2.40)<1e-6);
+        assert.equal(c.audio[0].at, plan({scene:"swallow"}).audio[0].at);
         assert(!plan({scene:"interrupt"}).audio.some(e=>e.event==="result.swap"));
-        assert(plan({scene:"interrupt"},"baseline").audio.some(e=>e.event==="result.swap"));
+        assert(!plan({scene:"interrupt"},"baseline").audio.some(e=>e.event==="result.swap"));
         for (const value of ["0.10","0.30"]) assert(Math.abs(plan({lead:value}).audio[1].at+Number(value)-pack.candidate.timelines.swapLight.Drop)<1e-6);
         await evaluate("document.getElementById('playB').click()");
-        await wait("document.getElementById('summary').textContent.startsWith('B · 0.4.4') && document.getElementById('events').children.length>2");
+        await wait("document.getElementById('summary').textContent.startsWith('B · 调整后') && document.getElementById('events').children.length>2");
         await evaluate("document.getElementById('stop').click();document.getElementById('clipTab').click();document.getElementById('playA').click()");
-        await wait("document.getElementById('summary').textContent.startsWith('A · 0.4.3') && document.getElementById('events').children.length===1");
+        await wait("document.getElementById('summary').textContent.startsWith('A · 0.4.4') && document.getElementById('events').children.length===1");
         assert.deepEqual([external,errors],[[],[]]);
-        const report = {offline:true,versions:2,eventsPerVersion:10,clipsPerVersion:22,distinctFiles:24,
+        const report = {offline:true,versions:2,eventsPerVersion:10,clipsPerVersion:22,distinctFiles:Object.keys(measured).length,
             sceneCount:scenes.length,frontEnds:forms.length,decoded:Object.keys(measured).length,onsetRelativeToDrop,leadToVoiceGap:gap,
-            ignitionGainDb:20*Math.log10(c.audio[0].gain/a.audio[0].gain),browserPlayback:true};
+            ignitionAt:c.audio[0].at,extinguishAt:plan({scene:"swallow"}).audio[0].at,ignitionRatio,upgradeRatio,ignitionGainDb:20*Math.log10(c.audio[0].gain/a.audio[0].gain),browserPlayback:true};
         fs.writeFileSync(path.join(outputDir,"audio-preview-results.json"),JSON.stringify(report,null,2)+"\n");
         console.log(report);
     } finally {

@@ -1,6 +1,8 @@
 # SurpriseRaven · 惊喜渡鸦
 
-Local stable build **0.4.4** restores the lamp after a reload and includes louder candle effects and an offline audio review.
+Experimental build **0.4.5-beta.1** restores stable lamp choices after completed normal/elite combats or a depleted chest. Reloading a Glass Eye or Sea Glass preview returns you to the lamp before pickup, with the same stake and offers. Shops, events, rest sites, bosses, remaining room rewards and unmatched saves use the native room checkpoint.
+
+Local stable build **0.4.4+audio.1** restores the lamp after a reload and includes louder candle effects and an offline audio review.
 
 [简体中文](README.md)
 

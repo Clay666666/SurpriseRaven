@@ -85,7 +85,11 @@ internal sealed partial class RavenLampPanelHooks : Control, IOverlayScreen
         RavenFocusHooks.FocusDefault(this, _exit);
     }
 
-    public void AfterOverlayOpened() => _playAudio("entry");
+    public void AfterOverlayOpened()
+    {
+        _playAudio("entry");
+        if (_player is not null) RavenReplayLogHooks.Mark(_player, "lamp-open");
+    }
     public void AfterOverlayShown()
     {
         Show();

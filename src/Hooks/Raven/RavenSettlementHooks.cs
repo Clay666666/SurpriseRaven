@@ -14,6 +14,7 @@ public static partial class RavenServiceHooks
         var state = RavenStorageHooks.Get(player);
         if (state.Pending is not { } pending || !CanStart(player, state, expectedRevision)
             || !RavenTransactionHooks.IsReady(pending)) return;
+        RavenReplayLogHooks.BeforeClaim(player, pending, request);
         await RunOperationAsync(player, state, async () =>
         {
             if (request.Kind == RavenPickupKind.Original)
@@ -76,7 +77,8 @@ public static partial class RavenServiceHooks
         CanInteract(player) && state.HasOpportunity && !state.Faulted && !state.InFlight
         && state.RoomKey == RoomKey(player) && (revision < 0 || revision == state.Revision);
 
-    private static async Task RunOperationAsync(Player player, RavenState state, Func<Task> operation)
+    private static async Task RunOperationAsync(Player player, RavenState state, Func<Task> operation,
+        [System.Runtime.CompilerServices.CallerMemberName] string action = "")
     {
         var lifetime = _lifetime;
         lifetime.Busy = true;
@@ -98,7 +100,7 @@ public static partial class RavenServiceHooks
             {
                 lifetime.Suppression.Value = Math.Max(0, lifetime.Suppression.Value - 1);
                 lifetime.Busy = false;
-                if (ReferenceEquals(lifetime, _lifetime)) SaveAndNotify(player);
+                if (ReferenceEquals(lifetime, _lifetime)) SaveAndNotify(player, action);
             }
         }
     }

@@ -102,10 +102,12 @@ public static partial class RavenServiceHooks
         }
     }
 
-    private static void SaveAndNotify(Player player)
+    private static void SaveAndNotify(Player player,
+        [System.Runtime.CompilerServices.CallerMemberName] string operation = "")
     {
         if (!_lifetime.Owns(player)) return;
         RavenStorageHooks.Touch(player);
+        RavenReplayLogHooks.Mark(player, operation);
         foreach (var callback in Changed?.GetInvocationList() ?? [])
             try { ((Action)callback)(); }
             catch (Exception error) { Logger.Log($"[Raven] Subscriber failed: {error}"); }

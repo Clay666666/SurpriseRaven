@@ -28,6 +28,9 @@ public static partial class RavenHeadlessTestsHooks
         Case("pending and nested relic rewards, release and saved claims", TestRelicReservations);
         Case("native Ancient pools, option callbacks and act replacement", TestNativeAncients);
         Case("50 percent lighting and saturation", TestLights);
+        Case("isolated atomic lamp replay journal", TestReplayJournalStore);
+        Case("native baseline, semantic replay and Ritsu RNG round trip", TestReplayProjections);
+        Case("source room adapters and original relic choices", TestReplayRoomRules);
         Case("independent RNG continuation after JSON save", TestRngRestore);
         Case("0.4.2 RitsuLib player slots and all five RNG streams survive the public rename", TestLegacyPersistenceIdentity);
         Case("111 shuffle vectors and saved reward RNG continuation", TestLegacyShuffle);
