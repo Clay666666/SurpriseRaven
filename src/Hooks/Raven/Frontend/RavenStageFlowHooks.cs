@@ -104,7 +104,7 @@ internal sealed partial class RavenStageHooks
         _phase = RavenStagePhase.Running;
         RavenStageSession.TimelineActive = true;
         _timeline = new RavenTimeline(RavenFrontendConfigHooks.Current.Timings, _plan.Outcome == RavenOutcome.Swallow,
-            _plan.LightsAfter > _plan.LightsBefore);
+            _plan.LightsAfter > _plan.LightsBefore, _plan.DisplayOutcome == RavenOutcome.Swap);
         _rewards.Interactive = false;
         _rewards.ShowStake(relic.Icon, from, RavenFrontendConfigHooks.Current.Timings.OfferFly);
         Hud.SetMessage(RavenServiceHooks.State.LastMessage);
@@ -132,12 +132,14 @@ internal sealed partial class RavenStageHooks
             case RavenCue.ReturnStart:
                 _bird.Carry(plan.Rewards.FirstOrDefault()?.Icon);
                 break;
+            case RavenCue.SwapSound:
+                _playAudio("reward.swap");
+                break;
             case RavenCue.Drop:
                 _bird.Carry(null);
                 _rewards.ShowRewards(plan.Rewards, _bird.BeakPosition, plan.OriginalReturn, plan.Outcome == RavenOutcome.Bonus,
                     reducedMotion: ReducedMotion);
                 _rewardsShown = true;
-                if (plan.DisplayOutcome == RavenOutcome.Swap) _playAudio("reward.swap");
                 break;
             case RavenCue.Reveal:
                 Reveal(plan);

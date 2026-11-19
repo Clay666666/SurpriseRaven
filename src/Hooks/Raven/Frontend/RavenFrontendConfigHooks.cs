@@ -2,27 +2,11 @@ using System.Text.Json;
 
 namespace SurpriseRaven.Hooks.Raven;
 
-public sealed class RavenTimings
-{
-    public double FadeIn { get; set; } = 0.35;
-    public double IgniteStagger { get; set; } = 0.12;
-    public double OfferFly { get; set; } = 0.45;
-    public double Crouch { get; set; } = 0.25;
-    public double FlyAway { get; set; } = 2.4;
-    public double GrabFraction { get; set; } = 0.42;
-    public double Away { get; set; } = 0.8;
-    public double ReturnFly { get; set; } = 2.2;
-    public double DropAt { get; set; } = 1.0;
-    public double DropFall { get; set; } = 0.45;
-    public double SwallowExtinguishAt { get; set; } = 1.7;
-    public double SwallowVoiceAt { get; set; } = 2.0;
-    public double SwallowEnd { get; set; } = 4.2;
-}
-
 public sealed class RavenAudioEvent
 {
     public List<string> Clips { get; set; } = [];
     public float Volume { get; set; } = 1f;
+    public float GainDb { get; set; }
     public double Chance { get; set; } = 1.0;
 }
 
@@ -60,6 +44,7 @@ public sealed class RavenFrontendConfig
             if (value <= 0 || value > 60) errors.Add($"timing {name}");
         if (t.GrabFraction is <= 0 or >= 1) errors.Add("timing grabFraction");
         if (t.DropAt >= t.ReturnFly) errors.Add("dropAt must precede the end of returnFly");
+        if (t.SwapSoundLead < 0 || t.SwapSoundLead > t.DropAt) errors.Add("timing swapSoundLead");
         if (!(t.SwallowExtinguishAt > 0 && t.SwallowExtinguishAt < t.SwallowVoiceAt && t.SwallowVoiceAt < t.SwallowEnd))
             errors.Add("swallow cue order");
         foreach (var name in RequiredEvents)
@@ -67,6 +52,7 @@ public sealed class RavenFrontendConfig
         foreach (var (name, evt) in Events)
         {
             if (evt.Volume is <= 0 or > 1) errors.Add($"event {name} volume");
+            if (!float.IsFinite(evt.GainDb)) errors.Add($"event {name} gainDb");
             if (evt.Chance is < 0 or > 1) errors.Add($"event {name} chance");
             foreach (var clip in evt.Clips)
                 if (!clipExists(clip)) errors.Add($"event {name} clip {clip}");

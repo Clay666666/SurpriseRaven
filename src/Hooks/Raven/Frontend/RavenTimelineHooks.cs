@@ -1,6 +1,24 @@
 namespace SurpriseRaven.Hooks.Raven;
 
-public enum RavenCue { Offer, Takeoff, Grab, Gone, ReturnStart, Drop, Reveal, Landed, Extinguish, SwallowVoice, Finish, Ignite }
+public sealed class RavenTimings
+{
+    public double FadeIn { get; set; } = 0.35;
+    public double IgniteStagger { get; set; } = 0.12;
+    public double OfferFly { get; set; } = 0.45;
+    public double Crouch { get; set; } = 0.25;
+    public double FlyAway { get; set; } = 2.4;
+    public double GrabFraction { get; set; } = 0.42;
+    public double Away { get; set; } = 0.8;
+    public double ReturnFly { get; set; } = 2.2;
+    public double DropAt { get; set; } = 1.0;
+    public double SwapSoundLead { get; set; }
+    public double DropFall { get; set; } = 0.45;
+    public double SwallowExtinguishAt { get; set; } = 1.7;
+    public double SwallowVoiceAt { get; set; } = 2.0;
+    public double SwallowEnd { get; set; } = 4.2;
+}
+
+public enum RavenCue { Offer, Takeoff, Grab, Gone, ReturnStart, Drop, Reveal, Landed, Extinguish, SwallowVoice, Finish, Ignite, SwapSound }
 
 // Pure, frame-rate independent schedule of one round's presentation.
 public sealed class RavenTimeline
@@ -13,6 +31,9 @@ public sealed class RavenTimeline
 
     public RavenTimeline(RavenTimings timings, bool swallow, bool gainsLight)
         : this(swallow, Schedule(timings, swallow, gainsLight)) { }
+
+    internal RavenTimeline(RavenTimings timings, bool swallow, bool gainsLight, bool swap)
+        : this(swallow, Schedule(timings, swallow, gainsLight, swap)) { }
 
     private RavenTimeline(bool swallow, IReadOnlyList<(double At, RavenCue Cue)> cues)
     {
@@ -30,7 +51,10 @@ public sealed class RavenTimeline
     public static IReadOnlyList<(double At, RavenCue Cue)> Schedule(RavenTimings t, bool swallow, bool gainsLight) =>
         ScheduleRound(t, swallow, gainsLight ? t.Away : 0, gainsLight);
 
-    private static IReadOnlyList<(double At, RavenCue Cue)> ScheduleRound(RavenTimings t, bool swallow, double away, bool gainsLight)
+    internal static IReadOnlyList<(double At, RavenCue Cue)> Schedule(RavenTimings t, bool swallow, bool gainsLight, bool swap) =>
+        ScheduleRound(t, swallow, gainsLight ? t.Away : 0, gainsLight, swap);
+
+    private static IReadOnlyList<(double At, RavenCue Cue)> ScheduleRound(RavenTimings t, bool swallow, double away, bool gainsLight, bool swap = false)
     {
         double takeoff = t.OfferFly + t.Crouch;
         List<(double, RavenCue)> cues =
@@ -58,6 +82,7 @@ public sealed class RavenTimeline
             double reveal = back + t.DropAt + t.DropFall;
             double landed = back + t.ReturnFly;
             cues.Add((back, RavenCue.ReturnStart));
+            if (swap) cues.Add((back + Math.Max(0, t.DropAt - t.SwapSoundLead), RavenCue.SwapSound));
             cues.Add((back + t.DropAt, RavenCue.Drop));
             cues.Add((reveal, RavenCue.Reveal));
             cues.Add((landed, RavenCue.Landed));

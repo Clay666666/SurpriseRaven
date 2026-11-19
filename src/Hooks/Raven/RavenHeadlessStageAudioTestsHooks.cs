@@ -34,7 +34,7 @@ internal static partial class RavenOverlayHooks
                     "The new flame and its glow are already visible in the frame requesting its sound.");
             }
             if (name != "reward.swap") { audio.Add(name); return; }
-            Check(stage.Rewards.Count == 1, "The swap lead starts in the cue that creates the reward slot.");
+            Check(stage.Rewards.Count == 0, "The swap lead starts before the reward slot is created.");
             RavenAudioHooks.PlaySwapReward((eventName, finished) =>
             {
                 audio.Add(eventName);
@@ -88,8 +88,10 @@ internal static partial class RavenOverlayHooks
                 stage.OnCue(RavenCue.ReturnStart, plan);
                 Check(audio.Skip(before).SequenceEqual(["candle.light"]) && stage.Candles.Count(c => c.Lit) == 8,
                     "One earned candle starts once before the raven returns in both motion modes.");
+                stage.OnCue(RavenCue.SwapSound, plan);
                 stage.OnCue(RavenCue.Drop, plan);
-                Check(audio.Skip(before).SequenceEqual(["candle.light", "reward.swap"]), "Only the swap lead starts at Drop.");
+                Check(stage.Rewards.Count == 1 && audio.Skip(before).SequenceEqual(["candle.light", "reward.swap"]),
+                    "The drop creates the slot without repeating its earlier sound.");
                 stage.OnCue(RavenCue.Reveal, plan);
                 stage.EnterPickup(plan);
                 stage.EnterPickup(plan);

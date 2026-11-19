@@ -79,5 +79,40 @@ function Get-WavInfo([byte[]]$b, [string]$id) {
     }
     $duration = [Math]::Round($data[0].Size / $byteRate, 4)
     if ($duration -lt 0.05) { throw "Asset $id is too short." }
-    return @{ Rate = $rate; Channels = $channels; Duration = $duration }
+    return @{ Rate = $rate; Channels = $channels; Duration = $duration; Offset = $data[0].Offset; Frames = $data[0].Size / $align }
+}
+
+# Preserve sample rate, channels and all samples between the short fades. Only the staged copy is edited.
+function Get-TrimmedPcm16([byte[]]$bytes, $wav, $trim, [string]$id) {
+    $rate = $wav.Rate; $align = 2 * $wav.Channels
+    $start = [int][Math]::Round($rate * $trim.startMs / 1000.0)
+    $end = if ($trim.PSObject.Properties.Name -contains 'endMs') { [int][Math]::Round($rate * $trim.endMs / 1000.0) } else { $wav.Frames }
+    $frames = $end - $start
+    $fadeIn = [int][Math]::Round($rate * $trim.fadeInMs / 1000.0)
+    $fadeOut = [int][Math]::Round($rate * $trim.fadeOutMs / 1000.0)
+    if ($start -lt 0 -or $end -gt $wav.Frames -or $frames -le 0 -or
+        $fadeIn -lt 0 -or $fadeOut -lt 0 -or $fadeIn + $fadeOut -gt $frames) { throw "Invalid PCM trim or fades for $id." }
+    $pcm = New-Object byte[] ($frames * $align)
+    [Array]::Copy($bytes, $wav.Offset + $start * $align, $pcm, 0, $pcm.Length)
+    foreach ($fade in @(@{ Length = $fadeIn; Start = 0; Step = 1 }, @{ Length = $fadeOut; Start = $frames - 1; Step = -1 })) {
+        for ($i = 0; $i -lt $fade.Length; $i++) {
+            $gain = $i / [double][Math]::Max(1, $fade.Length - 1)
+            $frame = $fade.Start + $i * $fade.Step
+            for ($channel = 0; $channel -lt $wav.Channels; $channel++) {
+                $offset = $frame * $align + $channel * 2
+                $sample = [int16][Math]::Round([BitConverter]::ToInt16($pcm, $offset) * $gain)
+                [BitConverter]::GetBytes($sample).CopyTo($pcm, $offset)
+            }
+        }
+    }
+    $stream = New-Object IO.MemoryStream
+    $writer = New-Object IO.BinaryWriter($stream)
+    try {
+        $writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF')); $writer.Write([int](36 + $pcm.Length))
+        $writer.Write([Text.Encoding]::ASCII.GetBytes('WAVEfmt ')); $writer.Write([int]16); $writer.Write([int16]1)
+        $writer.Write([int16]$wav.Channels); $writer.Write([int]$rate); $writer.Write([int]($rate * $align))
+        $writer.Write([int16]$align); $writer.Write([int16]16); $writer.Write([Text.Encoding]::ASCII.GetBytes('data'))
+        $writer.Write([int]$pcm.Length); $writer.Write($pcm); $writer.Flush()
+        return ,$stream.ToArray()
+    } finally { $writer.Dispose(); $stream.Dispose() }
 }

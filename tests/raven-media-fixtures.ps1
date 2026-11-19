@@ -16,11 +16,12 @@ function Write-RavenTestMedia($Spec, [string]$SourceDir) {
         } elseif ($asset.kind -eq 'mp3') {
             [IO.File]::WriteAllBytes($path, $mp3)
         } else {
+            $size = if ($asset.PSObject.Properties.Name -contains 'trim') { 32000 } else { 1600 }
             $stream = New-Object IO.MemoryStream; $writer = New-Object IO.BinaryWriter($stream)
             try {
-                $writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF')); $writer.Write([int](36 + 1600)); $writer.Write([Text.Encoding]::ASCII.GetBytes('WAVEfmt '))
+                $writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF')); $writer.Write([int](36 + $size)); $writer.Write([Text.Encoding]::ASCII.GetBytes('WAVEfmt '))
                 $writer.Write([int]16); $writer.Write([int16]1); $writer.Write([int16]1); $writer.Write([int]8000); $writer.Write([int]16000); $writer.Write([int16]2); $writer.Write([int16]16)
-                $writer.Write([Text.Encoding]::ASCII.GetBytes('data')); $writer.Write([int]1600); $writer.Write((New-Object byte[] 1600))
+                $writer.Write([Text.Encoding]::ASCII.GetBytes('data')); $writer.Write([int]$size); $writer.Write((New-Object byte[] $size))
                 $writer.Flush(); [IO.File]::WriteAllBytes($path, $stream.ToArray())
             } finally { $writer.Dispose(); $stream.Dispose() }
         }

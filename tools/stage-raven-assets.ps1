@@ -37,6 +37,12 @@ foreach ($asset in @($spec.assets)) {
     $entry = [ordered]@{ id = $id; path = $target; kind = [string]$asset.kind; size = $bytes.Length }
     if ($asset.kind -eq 'wav') {
         $wav = Get-WavInfo $bytes $id
+        if ($asset.PSObject.Properties.Name -contains 'trim') {
+            $entry.sourceSha256 = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
+            $bytes = Get-TrimmedPcm16 $bytes $wav $asset.trim $id
+            $wav = Get-WavInfo $bytes $id
+            $entry.size = $bytes.Length
+        }
         $entry.durationSeconds = $wav.Duration; $entry.sampleRate = $wav.Rate; $entry.channels = $wav.Channels
     } elseif ($asset.kind -in 'png', 'webp') {
         $size = Get-ImageSize $bytes ([string]$asset.kind) $id

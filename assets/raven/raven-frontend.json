@@ -12,6 +12,7 @@
     "away": 0.8,
     "returnFly": 2.2,
     "dropAt": 1.0,
+    "swapSoundLead": 0.2,
     "dropFall": 0.45,
     "swallowExtinguishAt": 1.7,
     "swallowVoiceAt": 2.0,
@@ -26,7 +27,7 @@
     "result.swap": { "clips": ["sfx.swap"] },
     "result.downgrade": { "clips": ["voice.downgrade"] },
     "result.swallow": { "clips": ["voice.swallow"] },
-    "candle.light": { "clips": ["sfx.candle_light.01", "sfx.candle_light.02", "sfx.candle_light.03", "sfx.candle_light.04", "sfx.candle_light.05", "sfx.candle_light.06"], "volume": 0.8 },
+    "candle.light": { "clips": ["sfx.candle_light.01", "sfx.candle_light.02", "sfx.candle_light.03", "sfx.candle_light.04", "sfx.candle_light.05", "sfx.candle_light.06"], "volume": 0.8, "gainDb": 6 },
     "candle.out": { "clips": ["sfx.candle_out.01", "sfx.candle_out.02", "sfx.candle_out.03", "sfx.candle_out.04", "sfx.candle_out.05", "sfx.candle_out.06"], "volume": 0.8 }
   }
 }

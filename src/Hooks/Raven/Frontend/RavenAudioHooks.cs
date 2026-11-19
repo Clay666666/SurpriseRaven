@@ -26,7 +26,11 @@ internal static class RavenAudioHooks
             Trace(eventName, "skipped headless");
             return;
         }
-        if (eventName == "reward.swap") PlaySwapReward(TryPlay);
+        if (eventName == "reward.swap")
+        {
+            long generation = RavenServiceHooks.Generation;
+            PlaySwapReward((name, finished) => generation == RavenServiceHooks.Generation && TryPlay(name, finished));
+        }
         else TryPlay(eventName, null);
     }
 
@@ -71,7 +75,8 @@ internal static class RavenAudioHooks
         }
         var config = RavenFrontendConfigHooks.Current;
         player.Stream = stream;
-        player.VolumeDb = Mathf.LinearToDb(config.Volume * config.Events[eventName].Volume);
+        var evt = config.Events[eventName];
+        player.VolumeDb = Mathf.LinearToDb(config.Volume * evt.Volume) + evt.GainDb;
         bool Start()
         {
             if (GodotObject.IsInstanceValid(player) && player.IsInsideTree())

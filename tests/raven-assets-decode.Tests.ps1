@@ -40,7 +40,15 @@ $specPath = Join-Path $testRoot 'spec.json'; $configPath = Join-Path $testRoot '
 $mediaRoot = Join-Path $staged 'SurpriseRaven\raven'
 Invoke-TestPack 'valid' $true | Out-Null
 foreach ($asset in $spec.assets) {
-    Assert-DecodeTest ((Get-FileHash -LiteralPath (Join-Path $source $asset.source)).Hash -eq (Get-FileHash -LiteralPath (Join-Path $mediaRoot $asset.target)).Hash) 'Staging and decoding must preserve original media bytes.'
+    $sourceHash = (Get-FileHash -LiteralPath (Join-Path $source $asset.source)).Hash
+    $target = Join-Path $mediaRoot $asset.target
+    if ($asset.PSObject.Properties.Name -contains 'trim') {
+        $entry = (Get-Content -Raw (Join-Path $mediaRoot 'manifest.json') | ConvertFrom-Json).assets | Where-Object id -eq $asset.id
+        Assert-DecodeTest ($entry.sourceSha256 -eq $sourceHash -and $entry.sha256 -eq (Get-FileHash -LiteralPath $target).Hash) 'The clipped WAV must identify its input and packed bytes.'
+        Assert-DecodeTest ($entry.durationSeconds -eq ($asset.trim.endMs - $asset.trim.startMs) / 1000.0) 'The fixture must be clipped to the requested sample boundaries.'
+    } else {
+        Assert-DecodeTest ($sourceHash -eq (Get-FileHash -LiteralPath $target).Hash) 'Unedited media must preserve original bytes.'
+    }
 }
 foreach ($kind in @('png', 'webp', 'mp3')) {
     $asset = $spec.assets | Where-Object kind -eq $kind

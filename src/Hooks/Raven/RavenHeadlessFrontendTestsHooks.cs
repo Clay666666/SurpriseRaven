@@ -35,11 +35,13 @@ public static partial class RavenHeadlessTestsHooks
         var errors = RavenFrontendConfigHooks.Current.Validate(id => RavenAssetsHooks.Find(id) is { Kind: "wav" or "mp3" });
         Check(errors.Count == 0, "Frontend config invalid: " + string.Join(", ", errors));
         var lead = RavenAssetsHooks.Find("sfx.swap_reward");
-        Check(lead is { Kind: "wav", Path: "audio/sfx/swap_reward.wav", Size: 317598 }
-            && lead.Sha256.Equals("1c1be94aba650f6ea40806eb010b6ffc3c0930dfcbe89c877f3bad80317725ee", StringComparison.OrdinalIgnoreCase),
-            "The mounted swap lead must match the supplied PCM WAV byte for byte.");
+        Check(lead is { Kind: "wav", Path: "audio/sfx/swap_reward.wav", Size: 128816 }
+            && lead.Sha256.Equals("ca3933d7a396921945ea2ca4a7e1272d09878f8be2049d2f8e838c7fe4d48f06", StringComparison.OrdinalIgnoreCase),
+            "The mounted swap lead must match the clipped and faded reference WAV.");
         Check(RavenAssetsHooks.Audio("sfx.swap_reward") is AudioStreamWav { MixRate: 44100, Stereo: true } wav
-            && Math.Round(wav.GetLength() * wav.MixRate) == 79380, "The 1.8-second swap lead decodes into 79,380 stereo frames.");
+            && Math.Round(wav.GetLength() * wav.MixRate) == 32193, "The 0.73-second swap lead decodes into 32,193 stereo frames.");
+        Check(RavenAssetsHooks.Find("sfx.swap")?.Sha256 == "3b79d253419194c71a09b227e594e608db09622ba9ae2147884fbfcae3e15042",
+            "The three caws retain their spacing and start at the trimmed onset.");
     }
 
     private static void TestTimeline()
@@ -59,6 +61,10 @@ public static partial class RavenHeadlessTestsHooks
             Check(cues.Count(c => c == RavenCue.Ignite) == (gains && !eats ? 1 : 0), "Exactly one surviving light gain can ignite.");
             if (!eats)
             {
+                var swap = new RavenTimeline(timings, false, gains, true);
+                Check(Math.Abs(swap.TimeOf(RavenCue.Drop) - swap.TimeOf(RavenCue.SwapSound) - 0.20) < 1e-6 &&
+                    swap.Advance(30).Count(c => c == RavenCue.SwapSound) == 1 && swap.Advance(30).Count == 0,
+                    "Swap audio starts 200 ms before the drop and also fires exactly once across a long frame.");
                 double At(RavenCue cue) => schedule.Single(c => c.Cue == cue).At;
                 double gone = At(RavenCue.Gone), back = At(RavenCue.ReturnStart);
                 Check(Math.Abs(back - gone - (gains ? 0.8 : 0.0)) < 1e-6, "Only a gained light holds the raven offscreen for 0.8 seconds.");
@@ -81,6 +87,8 @@ public static partial class RavenHeadlessTestsHooks
     private static void TestAudioEvents()
     {
         var config = RavenFrontendConfigHooks.Current;
+        Check(config.Events["candle.light"].GainDb == 6 && config.Events.Where(e => e.Key != "candle.light").All(e => e.Value.GainDb == 0),
+            "The six ignition variants receive the same 6 dB boost.");
         Check(config.Events.Keys.Order().SequenceEqual(RavenFrontendConfig.RequiredEvents.Order()),
             "Audio events differ from the approved set.");
         string[] entries = ["voice.entry.11", "voice.entry.15", "voice.entry.16"];

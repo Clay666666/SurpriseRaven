@@ -45,6 +45,11 @@ opencode.jsonc
 !/tools/ritsulib_check.py
 !/tools/pck_builder/
 !/tools/pck_builder/**
+!/tools/audio-preview/
+!/tools/audio-preview/*.cs
+!/tools/audio-preview/*.csproj
+!/tools/audio-preview/*.html
+!/tools/audio-preview/*.js
 !/tools/api-compat/
 !/tools/api-compat/*.cs
 !/tools/api-compat/*.csproj

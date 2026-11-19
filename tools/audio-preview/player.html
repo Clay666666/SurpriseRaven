@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>渡鸦路灯音效试听</title>
+<style>
+:root{color-scheme:dark;font:16px/1.55 "Segoe UI","Microsoft YaHei",sans-serif;background:#111718;color:#eceee5}
+*{box-sizing:border-box}body{margin:0}main{max-width:1000px;margin:0 auto;padding:36px 22px 60px}
+h1{font-size:clamp(1.6rem,5vw,2.65rem);letter-spacing:.025em;margin:0 0 6px}p{color:#bbc4be;margin:0 0 22px}
+section{margin:14px 0;padding:20px 22px;background:#1b2223;border:1px solid #384243;border-radius:12px}
+nav,.buttons,.row{display:flex;align-items:end;flex-wrap:wrap;gap:11px}nav{margin:25px 0 14px}
+label{display:grid;gap:5px;color:#d4ded5;font-size:.9rem}label select{font-size:1rem}small{color:#aebbb2}
+button,select{font:inherit;color:inherit;background:#293333;border:1px solid #4b5957;padding:8px 13px;border-radius:7px;min-height:42px}
+button{cursor:pointer}button:hover,select:hover{border-color:#c9b987}button:focus-visible,select:focus-visible{outline:3px solid #f3c37b;outline-offset:2px}
+button[aria-pressed=true],button.primary{color:#171916;background:#e6c48a;border-color:#e6c48a}
+button:disabled{opacity:.5;cursor:default}h2{font-size:1.15rem;margin:0 0 12px}select{max-width:100%}
+.row+.row,.buttons{margin-top:12px}.status{margin-left:auto;color:#e6c48a;font-variant-numeric:tabular-nums}
+progress{display:block;width:100%;margin:12px 0 2px;height:8px;accent-color:#e6c48a}.marker{font-size:1.25rem;margin:9px 0;color:#fae0b4;min-height:1.7em}
+ol{margin:8px 0 0;padding:0;list-style:none}.event{display:flex;gap:16px;padding:5px 8px;border-left:2px solid #455250}
+.event.current{background:#3b382c;border-color:#e6c48a}.event time{color:#b9c5bb;font: .9rem/1.7 monospace;white-space:nowrap}
+.muted{color:#aebbb2}.check{display:flex;align-items:center;min-height:42px}input{accent-color:#e6c48a}
+[hidden]{display:none!important}@media(max-width:550px){main{padding:22px 12px}section{padding:15px}.row label{max-width:100%;flex:1 1 min(180px,100%)}.status{width:100%}}
+</style>
+<main>
+<h1>渡鸦路灯音效试听</h1>
+<p>选同一场景依次播放两个版本。时间标记跟随音轨，场景内保留实际声部的重叠、停顿和相对音量。</p>
+<nav aria-label="试听方式"><button id="sceneTab" aria-pressed="true">场景回放</button><button id="clipTab" aria-pressed="false">逐条试听 · 22 条</button></nav>
+<section aria-label="试听设置">
+<div id="scenes">
+ <div class="row">
+  <label>场景<select id="scene">
+   <optgroup label="路灯演出">
+    <option value="swap">平换奖励</option><option value="entry">首次打开路灯</option><option value="upgrade">升档（含升至先古）</option>
+    <option value="downgrade">降档（含先古降稀有）</option><option value="bonus">三选一与原件</option>
+    <option value="keep">保留或返还原件</option><option value="swallow">吞噬与熄灯</option><option value="legacy">旧存档的普通换普通</option>
+   </optgroup>
+   <optgroup label="面板操作与声音衔接">
+    <option value="consecutive">连续两轮平换</option><option value="early">可领取后立即拾取</option>
+    <option value="refresh">刷新待领取面板</option><option value="restore">读档并重新打开待领取面板</option>
+    <option value="cover">从选牌或奖励覆盖页返回</option><option value="exit">主动退出与清理路灯</option>
+    <option value="idle">待机、悬停与无效献祭</option><option value="interrupt">前奏中重载对局</option>
+   </optgroup>
+  </select></label>
+  <label>界面<select id="front"><option value="normal">2D · 普通动态</option><option value="reduced">2D · 减少动态</option><option value="text">文字备用界面</option></select></label>
+ </div>
+ <div class="row">
+  <label id="lightWrap">本轮烛火<select id="light"><option value="gain">新增一根</option><option value="same">没有新增</option><option value="full">已经满灯</option></select></label>
+  <label id="candleWrap"><span id="candleLabel">点灯变体</span><select id="candle"></select></label>
+  <label id="entryWrap">入场抽取<select id="entry"><option value="random">按游戏概率</option><option value="silent">静音</option><option value="0">Ma4_11</option><option value="1">Ma4_15</option><option value="2">Ma4_16</option></select></label>
+  <label id="leadWrap">新版平换提前量<select id="lead"><option value="0.10">0.10 秒</option><option value="default" selected>打包设定 · 0.20 秒</option><option value="0.30">0.30 秒</option></select></label>
+  <label id="pickWrap">领取顺序<select id="pick"><option>先原件，后候选</option><option>先候选，后原件</option></select></label>
+ </div>
+ <div class="row">
+  <label id="faultWrap">播放条件<select id="fault"></select></label>
+  <label class="check" id="openedWrap"><input type="checkbox" id="opened">同时试听入场与立即献祭</label>
+  <button id="reroll">重新抽取变体</button>
+ </div>
+</div>
+<div id="library" hidden><label>音频素材<select id="clip"></select></label></div>
+<div class="buttons"><button id="playA">播放 A · 0.4.3</button><button id="playB" class="primary">播放 B · 0.4.4</button><button id="stop" disabled>停止</button>
+<span id="clock" class="status">0.00 s</span></div>
+<progress id="progress" value="0" max="1" aria-label="播放进度"></progress>
+</section>
+<section><h2>播放时间线</h2><div id="now" class="marker" role="status">点击播放</div>
+<div id="summary" class="muted"></div><ol id="events"></ol></section>
+</main>
+<script id="pack" type="application/json"><!--PLAYER_DATA--></script>
+<script>/*PLAYER_CODE*/</script>
+</html>
