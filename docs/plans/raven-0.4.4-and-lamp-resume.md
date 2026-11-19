@@ -15,3 +15,11 @@
 ## 验证
 
 锁定构建与 PCK 校验，0.111.0 和 0.113.1 同一产物做静态检查及 tools/verify-environment.ps1 -HeadlessGame 隔离测试，保留日志。禁止游戏 GUI、菜单往返或自动开局。headless 成功后标记待用户 GUI 验收。
+
+## 0.4.4 稳定版验证结果
+
+标签 v0.4.4 对应 dbcb38c。已先核验并安装正式 0.4.3，再从其公开源树完成此次稳定版。旧 0.4.1 部署目录已按原凭证的三个哈希备份至游戏 mods 目录之外。0.4.4 仅替换 SurpriseRaven，保留 RitsuLib、其他 Mod 和玩家存档。RitsuLib 实际 Current / Target 两列都渲染出「惊喜渡鸦 / SurpriseRaven (SurpriseRaven)」。
+
+同一 DLL/PCK 在 0.111.0 和 0.113.1 均通过静态检查（200 个类型、276 个成员）及隔离 headless。玩法断言分别为 7536、7538，两版均通过 629 个节点检查。覆盖旧领取任务悬挂、成功、失败、取消和新会话正常退出。Python 离线测试 30 项（其中 1 项按环境跳过）。真实对局显示待用户 GUI 验收。
+
+离线浏览器检查 16 种场景、两版各 10 个事件和 22 条音频，24 份不同的文件均能解码。点灯相对提高 6.00 dB，默认平换提前 0.20 秒，奖励主音尾至第一声鸦叫约 0.04 秒。发布目录的试听 HTML 从最终构建重新导出，SHA-256 与浏览器试听测试的文件一致。[双版报告索引](../../artifacts/staging/20261119-192918-13c0c402/passed-reports.json) · [试听测试报告](../../artifacts/verification/raven-audio-0.4.4/audio-preview-results.json) · [稳定版部署记录](../../artifacts/deployment-20261119-193021-32f31c90.json)
