@@ -4,6 +4,8 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Multiplayer;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
@@ -101,8 +103,36 @@ internal static partial class RavenOverlayHooks
         {
             RavenServiceHooks.ChangeRun(null);
             stack.Free();
-            map.Free();
+            FreeFixtureMap(map);
         }
         return checks;
     }
+
+    private static void FreeFixtureMap(NMapScreen map)
+    {
+        // NMapScreen's PREDELETE notification unsubscribes map votes (and map pings on 113).
+        // A menu-only host has no run synchronizers. Supply isolated event sources for that call.
+        var manager = RunManager.Instance;
+        var player = Player.CreateForNewRun<Ironclad>(UnlockState.none, 441UL);
+        var run = CreateRewardFixtureRun(player);
+        var net = new NetSingleplayerGameService();
+        var votes = AccessTools.Property(typeof(RunManager), nameof(RunManager.MapSelectionSynchronizer));
+        var pings = AccessTools.Property(typeof(RunManager), nameof(RunManager.FlavorSynchronizer));
+        object? oldVotes = votes.GetValue(manager), oldPings = pings.GetValue(manager);
+        using var flavor = new FlavorSynchronizer(net, run, player.NetId);
+        try
+        {
+            // The last constructor parameter changed from RunState to IRunState in 113.
+            if (oldVotes is null) votes.SetValue(manager, Activator.CreateInstance(votes.PropertyType,
+                net, manager.ActionQueueSynchronizer, run));
+            if (oldPings is null) pings.SetValue(manager, flavor);
+            map.Free();
+        }
+        finally
+        {
+            votes.SetValue(manager, oldVotes);
+            pings.SetValue(manager, oldPings);
+        }
+    }
+
 }
