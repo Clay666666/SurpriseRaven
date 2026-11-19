@@ -54,6 +54,8 @@ public static partial class RavenHeadlessTestsHooks
                 Check(!RavenReplayRoomHooks.AllRewardsSettled(room, false, false, false, [])
                     && !RavenReplayRoomHooks.AllRewardsSettled(room, true, false, false, [rewards]),
                     "An empty stack or unfinished reward set must keep the native room checkpoint.");
+                Check(RavenReplayRoomHooks.AllRewardsSettled(room, true, false, false, [rewards], rewards),
+                    "An accepted terminal proceed was ignored while its reward screen was still mounted.");
                 AccessTools.PropertySetter(typeof(NRewardsScreen), nameof(NRewardsScreen.IsComplete)).Invoke(rewards, [true]);
                 Check(RavenReplayRoomHooks.AllRewardsSettled(room, false, false, false, [rewards])
                     && RavenReplayRoomHooks.AllRewardsSettled(room, true, false, false, []),

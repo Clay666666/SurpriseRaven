@@ -1,4 +1,7 @@
 using Godot;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.Vfx.Cards;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 
 namespace SurpriseRaven.Hooks.Raven;
@@ -49,6 +52,24 @@ internal static partial class RavenOverlayHooks
         CheckDrag(!f.Drag.Active, "Ineligible relic cannot begin a drag.");
         await f.Release();
         f.Eligible = true;
+        var toyBox = ModelDb.Relic<ToyBox>().ToMutable();
+        foreach (var blocked in new[] { f.Relic, toyBox })
+        {
+            f.Relic.IsWax = ReferenceEquals(blocked, f.Relic);
+            f.Drag.SetSources([(f.Source, blocked)]);
+            await f.Frame();
+            var glow = f.Source.GetChildren().OfType<NCardUncommonGlow>().Single(node => !node.IsQueuedForDeletion());
+            CheckDrag(!glow.Visible && !glow.Emitting, "A wax or blocked Ancient relic displays the sacrifice halo.");
+            await f.Press();
+            await f.Move(f.TargetPoint);
+            await f.Release();
+            CheckDrag(!f.Drag.Active && f.Drops == 1, "A wax or blocked Ancient relic was submitted through drag.");
+        }
+        f.Relic.IsWax = false;
+        f.Drag.SetSources([(f.Source, f.Relic)]);
+        await f.Frame();
+        CheckDrag(f.Source.GetChildren().OfType<NCardUncommonGlow>().Single(node => !node.IsQueuedForDeletion()).Emitting,
+            "The normal Strike Dummy cannot be offered.");
         await f.Press();
         await f.Move(f.TargetPoint);
         CheckDrag(f.Drag.Cancel() && !f.Drag.Cancel(), "Escape route cancels the active drag once.");

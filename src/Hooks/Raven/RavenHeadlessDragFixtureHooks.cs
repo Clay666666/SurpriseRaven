@@ -21,7 +21,7 @@ internal sealed class RavenHeadlessDragFixtureHooks : IDisposable
         Position = new Vector2(60, 40), Size = new Vector2(68, 68), FocusMode = Control.FocusModeEnum.All,
         MouseFilter = Control.MouseFilterEnum.Stop
     };
-    internal readonly RelicModel Relic = ModelDb.Relic<Strawberry>().ToMutable();
+    internal readonly RelicModel Relic = ModelDb.Relic<StrikeDummy>().ToMutable();
     internal readonly RavenNativeDragHooks Drag;
     internal bool Allowed = true, Eligible = true;
     internal long Revision = 7, Opportunity = 3;
@@ -44,7 +44,7 @@ internal sealed class RavenHeadlessDragFixtureHooks : IDisposable
         tree.Root.AddChild(Viewport);
         OriginalThreshold = RavenNativeDragInputHooks.GetThreshold(Source);
         Drag = new RavenNativeDragHooks(Panel, Target, () => Allowed,
-            relic => Eligible && ReferenceEquals(relic, Relic), () => (Revision, Opportunity),
+            relic => Eligible && RavenStakeEligibilityHooks.CanStake(relic), () => (Revision, Opportunity),
             (_, _, revision) => { Drops++; SubmittedRevision = revision; });
         Drag.SetSources([(Source, Relic)]);
         Source.Released += _ => { if (!RavenNativeDragInputHooks.SuppressesInspect(Relic)) Inspections++; };

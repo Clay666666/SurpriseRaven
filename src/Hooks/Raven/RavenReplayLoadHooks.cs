@@ -45,13 +45,13 @@ internal static class RavenReplayLoadHooks
     {
         if (record.Format != 1 || record.GameBuild != RavenReplayLogHooks.GameBuild
             || record.RoomId < 0 || record.NextRoomId <= record.RoomId || record.Steps.Count == 0
-            || state.InFlight || state.Faulted || !state.HasOpportunity
+            || state.InFlight || state.Faulted || (!state.HasOpportunity && (state.OpportunityId == 0 || state.Pending is not null))
             || state.RoomKey != $"{act}:{floor}:{record.RoomId}"
             || state.Pending is { } pending && !RavenTransactionHooks.IsReady(pending))
             throw new InvalidDataException("Incompatible, incomplete or stale lamp boundary.");
         if (record.CandidateIndex == -1 && record.Candidate.Length == 0) return;
         var candidates = state.Pending?.Candidates;
-        if (candidates == null || record.CandidateIndex < 0 || record.CandidateIndex >= candidates.Count
+        if (!state.HasOpportunity || candidates == null || record.CandidateIndex < 0 || record.CandidateIndex >= candidates.Count
             || candidates[record.CandidateIndex].Id?.ToString() != record.Candidate)
             throw new InvalidDataException("The selected reward no longer matches the locked round.");
     }
@@ -60,37 +60,46 @@ internal static class RavenReplayLoadHooks
     private static void RestoreFromNativeSave(ref RunState state, SerializableRun save)
     {
         Active = null;
+        if (RavenReplayRecoveryHooks.RestoringNative) return;
         try
         {
             var key = RavenReplayJournalHooks.HostKey();
             string? payload = RavenReplayJournalHooks.Read(key);
-            if (payload is null || RavenReplayRecoveryHooks.RestoringNative) return;
-            var record = JsonSerializer.Deserialize<RavenReplayRecord>(payload)
-                ?? throw new InvalidDataException("Empty lamp replay.");
-            if (record.Format != 1 || record.GameBuild != RavenReplayLogHooks.GameBuild || record.Steps.Count == 0)
-                throw new InvalidDataException("Replay version does not match the running game.");
-            var host = RavenReplayProjectionHooks.Encode(save);
-            var projected = RavenReplayProjectionHooks.Apply(host, record.Steps, record.FinalDigest);
-            var projectedSave = RavenReplayProjectionHooks.Decode(projected);
-            var restored = RunState.FromSerializable(projectedSave);
-            if (restored.Players.Count != 1 || restored.CurrentMapCoord is not { } coord)
-                throw new InvalidDataException("Expected a single player and visited room.");
-            var player = restored.Players[0];
-            Validate(record, RavenStorageHooks.Get(player), restored.CurrentActIndex, coord.row + 1);
-            var projectedRoom = RavenReplayRoomHooks.RestoreRoom(record, projectedSave, restored);
-            if (!RavenReplayRoomHooks.SupportsRoom(projectedRoom))
-                throw new InvalidDataException("Unsupported source room.");
-            var session = new Session(state, restored, projectedRoom, record, key, projected, save);
-            RavenReplayLogHooks.Rebind(player, key, record, projected, projectedRoom);
+            if (payload is null)
+            {
+                Logger.Log($"[Raven] No lamp replay for native checkpoint anchor={key[^12..]}.");
+                return;
+            }
+            var session = Reconstruct(state, save, key, payload);
+            RavenReplayLogHooks.Rebind(session.Restored.Players[0], key, session.Record, session.Projected, session.Room);
             Active = session;
-            state = restored;
-            Logger.Log($"[Raven] Replayed {record.Steps.Count} confirmed steps for the {record.Room} lamp boundary.");
+            state = session.Restored;
+            var lamp = RavenStorageHooks.Get(state.Players[0]);
+            Logger.Log($"[Raven] Replayed {session.Record.Steps.Count} confirmed steps for {session.Record.Room} room={session.Room.Id}, " +
+                $"round={lamp.Round}, open={lamp.HasOpportunity}, anchor={key[^12..]}.");
         }
         catch (Exception error)
         {
             Active = null;
             Logger.Log($"[Raven] Lamp replay rejected; continuing from the native room checkpoint. {error.Message}");
         }
+    }
+
+    internal static Session Reconstruct(RunState original, SerializableRun save, string key, string payload)
+    {
+        var record = JsonSerializer.Deserialize<RavenReplayRecord>(payload)
+            ?? throw new InvalidDataException("Empty lamp replay.");
+        if (record.Format != 1 || record.GameBuild != RavenReplayLogHooks.GameBuild || record.Steps.Count == 0)
+            throw new InvalidDataException("Replay version does not match the running game.");
+        var host = RavenReplayProjectionHooks.Encode(save);
+        var projected = RavenReplayProjectionHooks.Apply(host, record.Steps, record.FinalDigest);
+        var projectedSave = RavenReplayProjectionHooks.Decode(projected);
+        var restored = RunState.FromSerializable(projectedSave);
+        if (restored.Players.Count != 1 || restored.CurrentMapCoord is not { } coord)
+            throw new InvalidDataException("Expected a single player and visited room.");
+        Validate(record, RavenStorageHooks.Get(restored.Players[0]), restored.CurrentActIndex, coord.row + 1);
+        var room = RavenReplayRoomHooks.RestoreRoom(record, projectedSave, restored);
+        return new Session(original, restored, room, record, key, projected, save);
     }
 
     [HarmonyPatch(typeof(NGame), nameof(NGame.LoadRun)), HarmonyPrefix]

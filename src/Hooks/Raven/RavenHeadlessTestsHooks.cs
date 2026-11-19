@@ -30,6 +30,7 @@ public static partial class RavenHeadlessTestsHooks
         Case("50 percent lighting and saturation", TestLights);
         Case("isolated atomic lamp replay journal", TestReplayJournalStore);
         Case("native baseline, semantic replay and Ritsu RNG round trip", TestReplayProjections);
+        Case("repeated save and continue across settled combat, elite and chest", TestReplayContinue);
         Case("source room adapters and original relic choices", TestReplayRoomRules);
         Case("independent RNG continuation after JSON save", TestRngRestore);
         Case("0.4.2 RitsuLib player slots and all five RNG streams survive the public rename", TestLegacyPersistenceIdentity);
