@@ -51,7 +51,7 @@ internal static partial class RavenOverlayHooks
             return;
         }
         if (HasOpenPanel || _leaving || !CanOpen(player)) return;
-        if (RavenTransitionHooks.CanTransition) _ = EnterAsync(player);
+        if (RavenTransitionHooks.CanTransition && !RavenReplayLoadHooks.IsRestoringSwallow(player)) _ = EnterAsync(player);
         else Push(player);
     }
 
@@ -85,7 +85,9 @@ internal static partial class RavenOverlayHooks
     private static void Push(Player player)
     {
         if (NOverlayStack.Instance is not { } stack) return;
-        _panel = new RavenLampPanelHooks(player, RavenServiceHooks.State.HasOpportunity ? null : _resultMessage);
+        string? result = RavenServiceHooks.State.HasOpportunity ? null : _resultMessage;
+        _panel = new RavenLampPanelHooks(player, result,
+            restoredSwallow: result is not null && RavenReplayLoadHooks.IsRestoringSwallow(player));
         stack.Push(_panel);
         Logger.Log("[Raven] Lamp overlay opened.");
     }

@@ -96,9 +96,13 @@ internal static partial class RavenTransactionHooks
     {
         if (state.Faulted || state.InFlight || !state.HasOpportunity || state.Pending is not { Outcome: RavenOutcome.Swallow } pending
             || !IsReady(pending)) return false;
-        RavenSessionHooks.EndOpportunity(state, $"渡鸦带走了 {pending.StakeTitle}，本次机会结束。");
+        RavenSessionHooks.EndOpportunity(state, SwallowMessage(pending));
+        state.EndedBySwallow = !state.HasOpportunity;
         return true;
     }
+
+    internal static string SwallowMessage(RavenPendingRound pending) =>
+        $"渡鸦带走了 {pending.StakeTitle}，本次机会结束。";
 
     internal static void Abandon(RavenState state)
     {

@@ -15,6 +15,7 @@ public sealed class RavenState
     public bool InFlight { get; set; }
     public string RoomKey { get; set; } = "";
     public string LastMessage { get; set; } = "选择一个遗物投入，或放弃本次机会。";
+    public bool EndedBySwallow { get; set; }
     // Legacy 0.2.x bonus choice; migrated into Pending on restore.
     public List<SerializableRelic> BonusCandidates { get; set; } = [];
     // Locked result: the stake is committed on drop and the output is granted on pickup.

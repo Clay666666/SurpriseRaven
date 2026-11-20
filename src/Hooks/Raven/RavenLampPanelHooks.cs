@@ -20,6 +20,7 @@ internal sealed partial class RavenLampPanelHooks : Control, IOverlayScreen
     private Control _exit = null!;
     private bool _closed;
     private readonly string? _terminalMessage;
+    private readonly bool _restoredSwallow;
     private long _revision;
     private RavenNativeDragHooks? _drag;
     private RavenPanelInputHooks? _input;
@@ -35,10 +36,11 @@ internal sealed partial class RavenLampPanelHooks : Control, IOverlayScreen
     public Control FocusedControlFromTopBar => DefaultFocusedControl;
 
     internal RavenLampPanelHooks(Player player, string? terminalMessage = null, bool allowStage = true,
-        Action<string>? playAudio = null)
+        Action<string>? playAudio = null, bool restoredSwallow = false)
     {
         _player = player;
         _terminalMessage = terminalMessage;
+        _restoredSwallow = restoredSwallow;
         _playAudio = playAudio ?? RavenAudioHooks.Play;
         Name = "RavenLampPanel";
         Theme = new Theme { DefaultFont = FontManager.GetSubstituteFont("zhs", FontType.Regular), DefaultFontSize = 20 };
@@ -87,6 +89,7 @@ internal sealed partial class RavenLampPanelHooks : Control, IOverlayScreen
 
     public void AfterOverlayOpened()
     {
+        if (_restoredSwallow) return;
         _playAudio("entry");
         if (_player is not null) RavenReplayLogHooks.Mark(_player, "lamp-open");
     }

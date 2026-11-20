@@ -77,7 +77,7 @@ public static partial class RavenHeadlessTestsHooks
             var record = history.Capture(RavenReplayProjectionHooks.Encode(live), operation, 4, candidate, index)!;
             RavenReplayJournalHooks.SaveAt(root, anchor, JsonSerializer.Serialize(record));
         }
-        void ContinueTwice(Action<Player, RavenState> assert)
+        void ContinueTwice(Action<Player, RavenState> assert, Action<RavenReplayLoadHooks.Session>? checkView = null)
         {
             var hostAfterContinue = host.DeepClone().AsObject();
             for (int count = 1; count <= 2; count++)
@@ -97,6 +97,7 @@ public static partial class RavenHeadlessTestsHooks
                 Check(restored.Deck.Cards.Count(model => model.Id == card.Id) == (encounter is null ? 0 : 1),
                     $"{type}: a confirmed room card was lost or duplicated.");
                 assert(restored, RavenStorageHooks.Get(restored));
+                checkView?.Invoke(resumed);
             }
         }
 
@@ -136,30 +137,55 @@ public static partial class RavenHeadlessTestsHooks
             && restored.Relics.Count(relic => relic.Id == reward.Id) == 1 && restored.Relics.All(relic => relic.Id != stake.Id)
             && RavenStorageHooks.Rng(restored, "reward").NextUnsignedLong() == expectedDraw,
             $"{type}: collected reward, next round or next RNG draw was repeated or lost."));
-        if (type == RoomType.Monster)
+        var swallowed = new RavenPendingRound
         {
-            var swallowed = new RavenPendingRound
-            {
-                SettlementVersion = RavenTransactionHooks.CurrentVersion, Outcome = RavenOutcome.Swallow,
-                StakeId = reward.Id.ToString(), StakeSnapshot = reward.ToSerializable()
-            };
-            Check(RavenTransactionHooks.CommitAsync(state, swallowed, () =>
-            {
-                player.RemoveRelicInternal(reward, silent: true);
-                return Task.CompletedTask;
-            }, () => { }).GetAwaiter().GetResult() && RavenTransactionHooks.CompleteSwallow(state), "Detached swallow failed.");
-        }
-        else RavenTransactionHooks.Abandon(state);
-        Publish("opportunity-ended");
-        ContinueTwice((restored, lamp) => Check(!lamp.HasOpportunity && lamp.Pending is null
-            && restored.Relics.Count(relic => relic.Id == reward.Id) == (type == RoomType.Monster ? 0 : 1),
-            $"{type}: an ended opportunity or swallowed relic came back."));
+            SettlementVersion = RavenTransactionHooks.CurrentVersion, Outcome = RavenOutcome.Swallow,
+            StakeId = reward.Id.ToString(), StakeSnapshot = reward.ToSerializable(),
+            StakeTitle = reward.Title.GetFormattedText()
+        };
+        Check(RavenTransactionHooks.CommitAsync(state, swallowed, () =>
+        {
+            player.RemoveRelicInternal(reward, silent: true);
+            return Task.CompletedTask;
+        }, () => { }).GetAwaiter().GetResult(), "Detached swallow failed.");
+        Publish("SubmitStakeAsync");
+        if (type is RoomType.Elite or RoomType.Treasure)
+            ContinueTwice((restored, lamp) => Check(lamp.Pending is { Outcome: RavenOutcome.Swallow, StakeConsumed: true }
+                && restored.Relics.All(relic => relic.Id != reward.Id), $"{type}: committed swallow did not restore."),
+                session => CheckSwallowView(session, swallowed.StakeTitle));
+        Check(RavenTransactionHooks.CompleteSwallow(state), "Detached swallow did not finish.");
+        Publish("ResolveSwallowAsync");
+        var afterSwallow = RavenStorageHooks.Rng(player, "reward").ToSerializable();
+        void CheckSettled(Player restored, RavenState lamp) => Check(!lamp.HasOpportunity && lamp.Pending is null
+            && lamp.EndedBySwallow && lamp.Lights == 0 && restored.Relics.All(relic => relic.Id != reward.Id)
+            && RavenStorageHooks.Rng(restored, "reward").ToSerializable() == afterSwallow,
+            $"{type}: a swallowed relic, active opportunity or changed RNG was restored.");
+        ContinueTwice(CheckSettled, session =>
+        {
+            if (type == RoomType.Monster) Check(session.SwallowResult is null, "Normal combat restored a terminal overlay.");
+            else CheckSwallowView(session, swallowed.StakeTitle);
+        });
+        // Leaving the mounted view does not change the room's settled replay.
+        Publish("save-and-quit");
+        if (type is RoomType.Elite or RoomType.Treasure)
+            ContinueTwice(CheckSettled, session => CheckSwallowView(session, swallowed.StakeTitle));
+
+        var nextFloor = RavenReplayProjectionHooks.Decode(host);
+        nextFloor.VisitedMapCoords.Add(new MapCoord(2, 1));
+        Check(RavenReplayJournalHooks.ReadAt(root, Anchor(RavenReplayProjectionHooks.Encode(nextFloor), profile)) is null,
+            "The next floor received the old swallow continuation.");
+        RavenSessionHooks.Enqueue(state, 1, roomKey);
+        Publish("lamp-open");
+        ContinueTwice((_, lamp) => Check(lamp.HasOpportunity && !lamp.EndedBySwallow,
+            $"{type}: a new opportunity inherited the old swallow."), session =>
+            Check(session.SwallowResult is null, $"{type}: new opportunity restored a terminal overlay."));
+        RavenTransactionHooks.Abandon(state);
+        Publish("ExitAsync");
+        ContinueTwice((_, lamp) => Check(!lamp.HasOpportunity && !lamp.EndedBySwallow,
+            $"{type}: a voluntary exit was marked as a swallow."), session =>
+            Check(session.SwallowResult is null, $"{type}: a voluntary exit restored a terminal overlay."));
         Check(RavenReplayJournalHooks.ReadAt(root, Anchor(host, Path.Combine(root, "other", "current_run.save"))) is null,
             "A different profile received another run's continuation.");
-        var newer = host.DeepClone().AsObject();
-        newer["current_act_index"] = 1;
-        Check(RavenReplayJournalHooks.ReadAt(root, Anchor(newer, profile)) is null,
-            "A different room checkpoint received an old continuation.");
         Check(!RunManager.Instance.IsInProgress, "Replay fixture started a live run.");
     }
 }

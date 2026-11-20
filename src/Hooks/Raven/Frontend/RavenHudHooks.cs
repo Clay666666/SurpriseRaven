@@ -8,6 +8,8 @@ namespace SurpriseRaven.Hooks.Raven;
 internal sealed partial class RavenHudHooks : Control
 {
     private const float BannerScale = 0.91f;
+    private const float InfoPanelTop = 36f;
+    private const float RelicClearance = 12f;
     private readonly NCommonBanner? _banner;
     private readonly NBackButton? _back;
     private readonly Label _info, _message, _caption, _pop, _toast;
@@ -27,7 +29,7 @@ internal sealed partial class RavenHudHooks : Control
         }
         else AddChild(Centered(Text("渡鸦路灯", LampTitleSize(44), bold: true), 8));
         // Sized to its content: a short round plaque, widening only when a message needs it.
-        var panel = _panel = new PanelContainer { Position = new Vector2(36, 36) };
+        var panel = _panel = new PanelContainer { Position = new Vector2(36, InfoPanelTop) };
         panel.AddThemeStyleboxOverride("panel", Panel());
         var column = new VBoxContainer();
         column.AddThemeConstantOverride("separation", 8);
@@ -75,6 +77,13 @@ internal sealed partial class RavenHudHooks : Control
     internal Control InfoPanel => _panel;
     internal Label CaptionLabel => _caption;
     internal Label PopLabel => _pop;
+
+    internal void PlaceInfoBelowRelics(float? relicBottom)
+    {
+        float top = Math.Max(InfoPanelTop, relicBottom.GetValueOrDefault() + RelicClearance);
+        if (!Mathf.IsEqualApprox(_panel.Position.Y, top))
+            _panel.Position = new Vector2(_panel.Position.X, top);
+    }
 
     internal void OnShown()
     {

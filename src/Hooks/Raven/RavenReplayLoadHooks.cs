@@ -16,7 +16,7 @@ namespace SurpriseRaven.Hooks.Raven;
 internal static class RavenReplayLoadHooks
 {
     internal sealed class Session(RunState original, RunState restored, AbstractRoom room, RavenReplayRecord record,
-        string key, JsonObject projected, SerializableRun host)
+        string key, JsonObject projected, SerializableRun host, string? swallowResult = null)
     {
         internal RunState Original { get; } = original;
         internal SerializableRun Host { get; } = host;
@@ -25,12 +25,34 @@ internal static class RavenReplayLoadHooks
         internal RavenReplayRecord Record { get; } = record;
         internal string Key { get; } = key;
         internal JsonObject Projected { get; } = projected;
+        internal string? SwallowResult { get; } = swallowResult;
         internal bool Entered { get; set; }
-        internal bool RequestedMap { get; set; }
+        private bool _requestedContinuation;
         private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal Task Ready => _ready.Task;
         internal void SignalReady() => _ready.TrySetResult();
         internal void SignalFailure(Exception exception) => _ready.TrySetException(exception);
+
+        internal void RequestContinuation(Action openMap, Action deferMap, Action<string> showResult)
+        {
+            if (_requestedContinuation) return;
+            _requestedContinuation = true;
+            if (SwallowResult is { } message)
+            {
+                deferMap();
+                showResult(message);
+            }
+            else openMap();
+        }
+
+        internal bool CompleteContinuation(bool hasOpportunity, bool mapOpen, bool mapDeferred, RavenLampPanelHooks? panel)
+        {
+            bool hasPanel = mapDeferred && RavenOverlayHooks.IsMounted(panel);
+            bool ready = SwallowResult is not null ? !mapOpen && hasPanel && panel!.IsTerminal
+                : hasPanel || (!hasOpportunity && mapOpen);
+            if (ready) SignalReady();
+            return ready;
+        }
     }
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<RunState, object> Retired = new();
@@ -40,6 +62,9 @@ internal static class RavenReplayLoadHooks
     internal static bool IsRestoredRoom(AbstractRoom room) => ReferenceEquals(Active?.Room, room);
     internal static bool AwaitingRoom(Player player) => Active is { Entered: false } session
         && ReferenceEquals(player.RunState, session.Restored);
+    internal static bool IsRestoringSwallow(Player player) => Active is { Entered: true, SwallowResult: not null } session
+        && !session.Ready.IsCompleted && ReferenceEquals(player.RunState, session.Restored)
+        && ReferenceEquals(player.RunState.CurrentRoom, session.Room);
 
     internal static void Validate(RavenReplayRecord record, RavenState state, int act, int floor)
     {
@@ -97,9 +122,19 @@ internal static class RavenReplayLoadHooks
         var restored = RunState.FromSerializable(projectedSave);
         if (restored.Players.Count != 1 || restored.CurrentMapCoord is not { } coord)
             throw new InvalidDataException("Expected a single player and visited room.");
-        Validate(record, RavenStorageHooks.Get(restored.Players[0]), restored.CurrentActIndex, coord.row + 1);
+        var state = RavenStorageHooks.Get(restored.Players[0]);
+        Validate(record, state, restored.CurrentActIndex, coord.row + 1);
         var room = RavenReplayRoomHooks.RestoreRoom(record, projectedSave, restored);
-        return new Session(original, restored, room, record, key, projected, save);
+        return new Session(original, restored, room, record, key, projected, save, SwallowResult(room, state));
+    }
+
+    private static string? SwallowResult(AbstractRoom room, RavenState state)
+    {
+        if (room.RoomType is not (RoomType.Elite or RoomType.Treasure)
+            || state.DeferredOpportunities.Any(offer => offer.RoomKey == state.RoomKey)) return null;
+        if (!state.HasOpportunity && state.EndedBySwallow) return state.LastMessage;
+        return state.PendingLights.Count == 1 && state.Pending is { Outcome: RavenOutcome.Swallow } pending
+            ? RavenTransactionHooks.SwallowMessage(pending) : null;
     }
 
     [HarmonyPatch(typeof(NGame), nameof(NGame.LoadRun)), HarmonyPrefix]

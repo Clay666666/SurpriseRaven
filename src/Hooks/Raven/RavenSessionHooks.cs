@@ -10,6 +10,7 @@ public static class RavenSessionHooks
         state.PendingLights.Add(lights);
         if (state.PendingLights.Count == 1)
         {
+            state.EndedBySwallow = false;
             state.Lights = lights;
             state.Round = 0;
             state.IsActive = false;
@@ -25,6 +26,7 @@ public static class RavenSessionHooks
     public static void EndOpportunity(RavenState state, string message)
     {
         if (state.HasOpportunity) state.PendingLights.RemoveAt(0);
+        state.EndedBySwallow = false;
         state.BonusCandidates.Clear();
         state.Pending = null;
         state.IsActive = false;
