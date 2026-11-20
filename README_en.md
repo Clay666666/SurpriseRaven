@@ -1,6 +1,6 @@
 # SurpriseRaven · 惊喜渡鸦
 
-Local build **0.4.6** aligns the top of the lamp page with the top of the relic bar, increases the lamp title font size by 40%, and excludes wax relics from offerings.
+**Version 0.4.7** lets the raven follow your pointer with its eyes. If the raven swallows your final offering in a treasure or elite room, reloading on that floor returns you to the lamp with all ten candles extinguished. The message panel moves below the last visible row of relics.
 
 The previous save update restores stable lamp choices after completed normal/elite combats or a depleted chest. Reloading a Glass Eye or Sea Glass preview returns you to the lamp before pickup, with the same stake and offers. Shops, events, rest sites, bosses, remaining room rewards and unmatched saves use the native room checkpoint.
 
@@ -10,7 +10,7 @@ The previous audio update restores the lamp after a reload and includes louder c
 
 SurpriseRaven adds a relic exchange to single-player *Slay the Spire 2*. When you obtain a qualifying relic, a raven offers you a chance to gamble a relic you already own. It might bring back a better one, or swallow your offering.
 
-**Download 0.4.3**　[Player ZIP](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.3/SurpriseRaven-0.4.3.zip) · [Release notes and checksum](https://github.com/Clay666666/SurpriseRaven/releases/tag/v0.4.3)
+**Download 0.4.7**　[Player ZIP](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.7/SurpriseRaven-0.4.7.zip) · [Release notes and checksum](https://github.com/Clay666666/SurpriseRaven/releases/tag/v0.4.7)
 
 ## Installation and upgrades
 
@@ -39,7 +39,7 @@ Slay the Spire 2/
 
 | Symptom | What to check |
 | --- | --- |
-| The ZIP contains source code with no DLL or PCK | Download and extract the [SurpriseRaven-0.4.3.zip player package](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.3/SurpriseRaven-0.4.3.zip) from the release's Assets section. |
+| The ZIP contains source code with no DLL or PCK | Download and extract the [SurpriseRaven-0.4.7.zip player package](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.7/SurpriseRaven-0.4.7.zip) from the release's Assets section. |
 | SurpriseRaven is missing from the mod list | Look for `mods/SurpriseRaven/SurpriseRaven.json`. The DLL and PCK belong beside it. Move the folder up if extraction added another `mods` folder or ZIP-name folder. |
 | Missing dependency or startup error | Check the game version and that the full RitsuLib 0.6.14 Workshop package is installed and enabled. Its manifest ID is `STS2-RitsuLib`. On upgrades, check that the old development folder was moved out. |
 | The lamp didn't open | Check the relic tier and finish the current combat or reward selection in single-player. For diagnostics, search for `Hooks active` and `[Raven]` in `logs/mod_log.txt` under the game's user data directory. The engine log is `logs/godot.log` in the same location. |

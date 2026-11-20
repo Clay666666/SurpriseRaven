@@ -4,13 +4,13 @@
 
 惊喜渡鸦是《杀戮尖塔 2》的单人 Mod。捡到符合条件的遗物后，渡鸦会在当前房间亮起路灯。你可以赌一件已有的遗物，试试能否换来更高稀有度的奖励，也可能被渡鸦一口吞掉。
 
-**本地版本 0.4.6** 将路灯界面上沿对齐到遗物栏上沿，标题字号增大 40%，蜡质遗物不能献祭。
+**正式版 0.4.7** 的渡鸦会随鼠标移动视线。宝箱房或精英房的最后一次路灯机会被吞噬后，同层读档会回到十支蜡烛全灭的结束页。左上角说明框会随遗物栏换行调整位置。
 
 **此前的读档更新** 支持已领完奖励的普通战斗、精英战斗和已结清的宝箱。在玻璃眼珠或海玻璃的选牌界面 SL，会回到灯下领取前，保留投入和本轮候选，可以换选。商店、事件、营火、Boss、仍有待领奖励的房间，以及缺少匹配记录的旧档，沿用原版房间检查点。
 
 **此前的音效更新** 修复保存并重载后路灯无法重开，增强点灯音效。离线试听页可对照全部声音场景。
 
-**公开下载 0.4.3**　[玩家安装包（ZIP）](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.3/SurpriseRaven-0.4.3.zip) · [发布说明与校验值](https://github.com/Clay666666/SurpriseRaven/releases/tag/v0.4.3)
+**公开下载 0.4.7**　[玩家安装包（ZIP）](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.7/SurpriseRaven-0.4.7.zip) · [发布说明与校验值](https://github.com/Clay666666/SurpriseRaven/releases/tag/v0.4.7)
 
 ## 安装与升级
 
@@ -39,7 +39,7 @@ Slay the Spire 2/
 
 | 遇到的问题 | 检查方法 |
 | --- | --- |
-| 下载的 ZIP 里只有源码，找不到 DLL 或 PCK | 下载并解压发布页 Assets 下的 [SurpriseRaven-0.4.3.zip 玩家包](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.3/SurpriseRaven-0.4.3.zip)。 |
+| 下载的 ZIP 里只有源码，找不到 DLL 或 PCK | 下载并解压发布页 Assets 下的 [SurpriseRaven-0.4.7.zip 玩家包](https://github.com/Clay666666/SurpriseRaven/releases/download/v0.4.7/SurpriseRaven-0.4.7.zip)。 |
 | Mod 列表里没有惊喜渡鸦 | 查找 `mods/SurpriseRaven/SurpriseRaven.json`。同一层应有 DLL 和 PCK。若多解压了一层 ZIP 名或 `mods`，把 `SurpriseRaven` 文件夹移到游戏的 `mods` 直属目录。 |
 | 依赖缺失或进游戏时报加载错误 | 查看游戏版本，确认完整工坊版 RitsuLib 0.6.14 已安装并启用。Mod 清单里的依赖 ID 是 `STS2-RitsuLib`。若从开发版升级，同时检查旧目录已移出。 |
 | 获得遗物后没有弹出路灯 | 先确认是单人模式、遗物稀有度符合条件，并完成当前的战斗或奖励选择。需要定位问题时，可在游戏用户数据目录的 `logs/mod_log.txt` 搜索 `Hooks active` 和 `[Raven]`，并对照同目录的 `godot.log`。 |

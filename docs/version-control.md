@@ -2,7 +2,7 @@
 
 ## 当前基线
 
-- 当前公开版本为 `SurpriseRaven 0.4.3`，使用完整工坊版 RitsuLib `0.6.14`。[公开发行与验收方案](plans/surprise-raven-release.md)
+- 当前公开版本为 `SurpriseRaven 0.4.7`，使用完整工坊版 RitsuLib `0.6.14`。[公开发行与验收方案](plans/v0.4.7-release.md)
 - 保留恢复标签：`v0.2.0`，对应回退 SL 实验后的玩法、工具链和测试源码；双版本验收记录见 [compat-111-113.md](plans/compat-111-113.md)。
 - 开发仓库保留上游模板历史和原有 `origin`。公开源码快照与玩家发行位于 [Clay666666/SurpriseRaven](https://github.com/Clay666666/SurpriseRaven)，默认分支为 `main`。
 - 0.3.1 的同一主 Mod 产物已通过 111/113 构建、静态 API 和隔离 headless 验证，真实 GUI 验收仍由用户完成。Git 标签不等于 GUI 验收通过。
