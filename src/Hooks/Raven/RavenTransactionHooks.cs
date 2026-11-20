@@ -96,9 +96,13 @@ internal static partial class RavenTransactionHooks
     {
         if (state.Faulted || state.InFlight || !state.HasOpportunity || state.Pending is not { Outcome: RavenOutcome.Swallow } pending
             || !IsReady(pending)) return false;
-        RavenSessionHooks.EndOpportunity(state, $"渡鸦带走了 {pending.StakeTitle}，本次机会结束。");
+        RavenSessionHooks.EndOpportunity(state, SwallowMessage(pending));
+        state.EndedBySwallow = !state.HasOpportunity;
         return true;
     }
+
+    internal static string SwallowMessage(RavenPendingRound pending) =>
+        $"渡鸦带走了 {pending.StakeTitle}，本次渡鸦路灯结束。";
 
     internal static void Abandon(RavenState state)
     {
@@ -125,7 +129,7 @@ internal static partial class RavenTransactionHooks
     {
         state.Faulted = true;
         state.Revision++;
-        state.LastMessage = "结算异常，当前机会已停止。请退出并保留日志；不会自动重试扣除或发奖。";
+        state.LastMessage = "结算异常，当前渡鸦路灯已停止。请退出并保留日志。";
         Logger.Log($"[Raven] Settlement failed; actual inventory retained, no retry or refund: {error}");
     }
 

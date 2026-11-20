@@ -51,6 +51,7 @@ try {
     foreach ($file in @('SurpriseRaven.csproj', 'ModEntry.cs', 'SurpriseRaven.json', 'packages.lock.json')) {
         Copy-Item -LiteralPath (Join-Path $repoRoot "src\$file") -Destination (Join-Path $fixtureRoot 'src')
     }
+    Copy-Item -LiteralPath (Join-Path $repoRoot 'src\Config') -Destination (Join-Path $fixtureRoot 'src') -Recurse
     Copy-Item -LiteralPath (Join-Path $repoRoot 'tools\pck_builder\build_pck.gd') -Destination (Join-Path $fixtureRoot 'tools\pck_builder')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'tools\stage-raven-assets.ps1') -Destination (Join-Path $fixtureRoot 'tools')
     Copy-Item -LiteralPath (Join-Path $repoRoot 'tools\raven-media-validation.ps1') -Destination (Join-Path $fixtureRoot 'tools')
@@ -89,6 +90,11 @@ public static class NativeToolStub {
     public static int Main(string[] args) {
         bool isDotnet = Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]) == "dotnet";
         if (isDotnet) {
+            if (args[0] == "run") {
+                if (!File.Exists(args[args.Length - 1])) return 28;
+                Console.WriteLine("Gameplay odds validation fixture");
+                return 0;
+            }
             string id = Path.GetFileNameWithoutExtension(args[1]);
             if (Environment.GetEnvironmentVariable("SURPRISE_RAVEN_TEST_FAIL_BUILD") == id) {
                 Console.Error.WriteLine("Injected compiler failure"); return 37;
@@ -135,6 +141,15 @@ public static class NativeToolStub {
     New-Item -ItemType Directory -Path $installedMain -Force | Out-Null
     $sentinel = Join-Path $installedMain 'keep-existing.txt'
     Set-Content -LiteralPath $sentinel -Value 'previous installation'
+
+    $fixtureOdds = Join-Path $fixtureRoot 'src\Config\gameplay-odds.json'
+    Move-Item -LiteralPath $fixtureOdds -Destination "$fixtureOdds.saved"
+    try {
+        Run-Build -ShouldSucceed $false | Out-Null
+        Assert-True (Test-Path -LiteralPath $sentinel) 'Missing gameplay odds must not modify installed files.'
+    } finally {
+        Move-Item -LiteralPath "$fixtureOdds.saved" -Destination $fixtureOdds
+    }
 
     Write-TestJson (Join-Path $dataRoot 'sts2.runtimeconfig.json') @{ runtimeOptions = @{ tfm = 'net10.0' } }
     Run-Build -ShouldSucceed $false | Out-Null

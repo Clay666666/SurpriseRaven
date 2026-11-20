@@ -19,8 +19,8 @@ public static partial class RavenHeadlessTestsHooks
         _assertions = 0;
         Cases.Clear();
         Case("RitsuLib current and target display names", TestRitsuLoadOrderName);
-        Case("Excel weights, every outcome boundary and result RNG", TestOutcomeWeights);
-        Case("editable gameplay odds and initial config", TestGameplayOddsConfig);
+        Case("packaged weights, every outcome boundary and result RNG", TestOutcomeWeights);
+        Case("packaged gameplay odds and validation", TestGameplayOddsConfig);
         Case("Ancient draws, historical candidates, shortages and stake blocking", TestOfferShortages);
         Case("rarity triggers, tiers and targets", TestRarities);
         Case("starter, upgraded starter and wax stakes, rejection and restore", TestStakeEligibility);
@@ -29,7 +29,7 @@ public static partial class RavenHeadlessTestsHooks
         Case("merchant stock and remaining treasure relics", TestNativeRoomRelicOffers);
         Case("pending and nested relic rewards, release and saved claims", TestRelicReservations);
         Case("native Ancient pools, option callbacks and act replacement", TestNativeAncients);
-        Case("50 percent lighting and saturation", TestLights);
+        Case("packaged lighting chance and saturation", TestLights);
         Case("isolated atomic lamp replay journal", TestReplayJournalStore);
         Case("native baseline, semantic replay and Ritsu RNG round trip", TestReplayProjections);
         Case("repeated save and continue across settled combat, elite and chest", TestReplayContinue);
@@ -109,10 +109,11 @@ public static partial class RavenHeadlessTestsHooks
 
     private static void TestLights()
     {
+        var odds = RavenGameplayOddsConfigHooks.Parse(RavenGameplayOddsHooks.ReadPublishedJson());
         for (int lights = 0; lights <= 6; lights++)
         {
             for (int roll = 0; roll < 100; roll++)
-                Check(RavenRulesHooks.NextLights(lights, roll) == Math.Min(6, lights + (roll < 50 ? 1 : 0)),
+                Check(RavenRulesHooks.NextLights(lights, roll) == Math.Min(6, lights + (roll < odds.LightUpPercent ? 1 : 0)),
                     "Lighting probability or six-light cap differs.");
         }
         Reject(() => RavenRulesHooks.NextLights(0, -1), "Negative lighting roll accepted.");

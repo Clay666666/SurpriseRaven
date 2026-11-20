@@ -12,7 +12,7 @@ internal static partial class RavenOverlayHooks
         var tree = (SceneTree)Engine.GetMainLoop();
         int checks = 0;
         void Check(bool condition, string message) { Require(condition, message); checks++; }
-        foreach (var size in new[] { new Vector2(1920, 1080), new Vector2(1680, 1260), new Vector2(2580, 1080) })
+        foreach (var size in StageSizes)
         {
             var fixture = new Control { Size = size, Position = new Vector2(19, 23), Scale = new Vector2(1.2f, 0.9f) };
             tree.Root.AddChild(fixture);
@@ -22,6 +22,10 @@ internal static partial class RavenOverlayHooks
                 var content = new Control();
                 fixture.AddChild(panel);
                 panel.AddChild(content);
+                var hud = new RavenHudHooks();
+                content.AddChild(hud);
+                hud.SetInfo(0, 0, true);
+                hud.SetMessage("渡鸦带走了 历石，本次机会结束。");
                 var background = new Control { Size = new Vector2(size.X, 100) };
                 var map = new Control { Position = new Vector2(size.X - 200, 0), Size = new Vector2(80, 90) };
                 fixture.AddChild(background);
@@ -40,6 +44,23 @@ internal static partial class RavenOverlayHooks
                     float top = Boundary();
                     Check(Mathf.IsEqualApprox(top, expectedTop), $"{label}: header boundary {top} did not match {expectedTop}.");
                     RavenPageLayoutHooks.Apply(content, size, top);
+                    var before = (hud.InfoPanel.Position.X, hud.InfoPanel.Size.X, content.GetGlobalTransformWithCanvas(),
+                        hud.Banner?.GetGlobalTransformWithCanvas(), hud.ExitControl.GetGlobalTransformWithCanvas());
+                    hud.PlaceInfoBelowRelics(RavenPageLayoutHooks.RelicBottom(panel, hud, rows));
+                    var after = (hud.InfoPanel.Position.X, hud.InfoPanel.Size.X, content.GetGlobalTransformWithCanvas(),
+                        hud.Banner?.GetGlobalTransformWithCanvas(), hud.ExitControl.GetGlobalTransformWithCanvas());
+                    Check(before == after, $"{label}: positioning the plaque shifted other controls or changed its width.");
+                    var hudInverse = hud.GetGlobalTransformWithCanvas().AffineInverse();
+                    var panelInverse = panel.GetGlobalTransformWithCanvas().AffineInverse();
+                    float minimum = 36;
+                    foreach (var icon in rows.Where(icon => icon.IsVisibleInTree()))
+                    {
+                        var iconBottom = icon.GetGlobalTransformWithCanvas() * icon.Size;
+                        if ((panelInverse * iconBottom).Y <= 0) continue;
+                        minimum = Math.Max(minimum, (hudInverse * iconBottom).Y + 12);
+                    }
+                    Check(Mathf.IsEqualApprox(hud.InfoPanel.Position.Y, minimum),
+                        $"{label}: the plaque top is {hud.InfoPanel.Position.Y}, expected {minimum}.");
                     Check(content.Position.X == 0 && content.Scale.X == 1 && content.Size.IsEqualApprox(size),
                         $"{label}: horizontal or logical dimensions changed.");
                     Check(Mathf.IsEqualApprox(content.Position.Y + content.Size.Y * content.Scale.Y, size.Y),
@@ -91,6 +112,8 @@ internal static partial class RavenOverlayHooks
                 await WaitForRelicLayout(tree);
                 Check(flow.GetLineCount() == 1, "Widening the inventory did not restore one row.");
                 Verify(104, "Inventory widened");
+                inventoryParent.Scale = new Vector2(1, 0.2f);
+                Verify(104 * 0.2f, "Already clear of a scaled-down inventory");
                 inventoryParent.Position = new Vector2(17, 30);
                 inventoryParent.Scale = new Vector2(1.1f, 0.8f);
                 Verify(30 + 104 * 0.8f, "Inventory ancestor transformed");

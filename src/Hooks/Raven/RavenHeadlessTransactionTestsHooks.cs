@@ -84,13 +84,16 @@ public static partial class RavenHeadlessTestsHooks
                 "Bonus did not honor the selected candidate and append position.");
         }
 
+        foreach (bool hasNext in new[] { false, true })
         {
             var (state, pending) = TransactionFixture(RavenOutcome.Swallow);
+            if (hasNext) RavenSessionHooks.Enqueue(state, 4, state.RoomKey);
             int removed = 0;
             Check(await RavenTransactionHooks.CommitAsync(state, pending, () => { removed++; return Task.CompletedTask; }, () => { }),
                 "Swallow did not commit.");
             Check(RavenTransactionHooks.CompleteSwallow(state) && !RavenTransactionHooks.CompleteSwallow(state)
-                && removed == 1 && !state.HasOpportunity, "Swallow completion consumed twice or retained the opportunity.");
+                && removed == 1 && state.HasOpportunity == hasNext && state.EndedBySwallow == !hasNext
+                && state.Lights == (hasNext ? 4 : 0), "Swallow consumed twice or did not advance to the expected opportunity.");
         }
         foreach (var outcome in new[] { RavenOutcome.Swap, RavenOutcome.Keep, RavenOutcome.Bonus })
         {

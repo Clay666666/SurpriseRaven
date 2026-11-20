@@ -56,7 +56,12 @@ public static partial class RavenHeadlessTestsHooks
     {
         int[] draws = [55, 35, 72, 23, 69, 59, 38, 28, 41, 10, 36, 37, 19, 20, 29, 3,
             61, 47, 61, 23, 18, 82, 38, 19, 57, 26, 48, 62, 36];
-        var results = draws.Select((roll, index) => RavenRulesHooks.Roll(Math.Min(6, index + 4), roll, RelicRarity.Ancient)).ToArray();
+        int[][] ancientAtFourToSix =
+        [
+            [0, 0, 0, 38, 9, 53], [0, 0, 0, 40, 10, 50], [0, 0, 0, 40, 12, 48]
+        ];
+        var results = draws.Select((roll, index) =>
+            (RavenOutcome)RavenGameplayOddsHooks.Select(ancientAtFourToSix[Math.Min(2, index)], roll)).ToArray();
         Check(results.Count(result => result == RavenOutcome.Downgrade) == 17
             && results.Count(result => result == RavenOutcome.Keep) == 9 && results.Count(result => result == RavenOutcome.Bonus) == 3,
             "The reported Ancient sequence did not reproduce the original draws.");
@@ -70,7 +75,7 @@ public static partial class RavenHeadlessTestsHooks
         player.AddRelicInternal(stake, silent: true);
         player.AddRelicInternal(ancient, silent: true);
 
-        RavenOutcome swap = RavenRulesHooks.Roll(4, 68, stake.Rarity);
+        var swap = (RavenOutcome)RavenGameplayOddsHooks.Select([18, 42, 26, 5, 9, 0], 68);
         Check(swap == RavenOutcome.Swap, "Razor Tooth roll 68 must be a swap.");
         var history = run.CurrentMapPointHistoryEntry!.PlayerStats.Single();
         var passives = RavenPoolHooks.CreateCandidates(player, RelicRarity.Rare, 1000, new Rng(918UL))
@@ -115,15 +120,23 @@ public static partial class RavenHeadlessTestsHooks
 
     private static void TestGameplayOddsConfig()
     {
-        var template = RavenGameplayOddsHooks.Template();
-        var odds = RavenGameplayOddsHooks.Parse(template);
-        Check(odds.InitialLights.SequenceEqual([1, 1, 1, 1, 1, 1]) && odds.LightUpPercent == 50
-            && odds.Outcomes["Ancient"][6].SequenceEqual([0, 0, 0, 40, 12, 48]), "Odds template does not reproduce the defaults.");
-        var custom = RavenGameplayOddsHooks.Parse(template.Replace("\"lightUpPercent\": 50", "\"lightUpPercent\": 75"));
+        var packaged = RavenGameplayOddsHooks.ReadPublishedJson();
+        var odds = RavenGameplayOddsConfigHooks.Parse(packaged);
+        Check(odds.LightUpPercent == RavenGameplayOddsHooks.LightUpPercent
+            && RavenRulesHooks.DescribeOdds(0).Contains($"{odds.LightUpPercent}%"), "Runtime and odds description did not use the packaged rate.");
+        var rng = new Rng(731UL);
+        var reference = new Rng(731UL);
+        int initialDraw = reference.NextInt(0, odds.InitialLights.Sum());
+        Check(RavenGameplayOddsHooks.InitialLights(rng) == RavenGameplayOddsHooks.Select(odds.InitialLights, initialDraw)
+            && rng.ToSerializable().counter == 1, "Starting lights did not use one packaged-weight draw.");
+        var customJson = System.Text.Json.Nodes.JsonNode.Parse(packaged)!.AsObject();
+        customJson["lightUpPercent"] = 75;
+        var custom = RavenGameplayOddsConfigHooks.Parse(customJson.ToJsonString());
         Check(custom.LightUpPercent == 75, "Editable chance did not parse.");
         try
         {
-            RavenGameplayOddsHooks.Parse(template.Replace("\"lightUpPercent\": 50", "\"lightUpPercent\": 101"));
+            customJson["lightUpPercent"] = 101;
+            RavenGameplayOddsConfigHooks.Parse(customJson.ToJsonString());
             throw new InvalidOperationException("Invalid candle rate was accepted.");
         }
         catch (InvalidDataException error)
@@ -131,6 +144,6 @@ public static partial class RavenHeadlessTestsHooks
             Check(error.Message.Contains("lightUpPercent"), "Config validation missed the failing field.");
         }
         string path = Path.Combine(OS.GetUserDataDir(), "SurpriseRaven", "gameplay-odds.json");
-        Check(File.Exists(path), "Initial startup did not generate the user odds file.");
+        Check(!File.Exists(path), "Startup generated an AppData odds override.");
     }
 }

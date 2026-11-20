@@ -10,6 +10,7 @@ public static class RavenSessionHooks
         state.PendingLights.Add(lights);
         if (state.PendingLights.Count == 1)
         {
+            state.EndedBySwallow = false;
             state.Lights = lights;
             state.Round = 0;
             state.IsActive = false;
@@ -17,7 +18,7 @@ public static class RavenSessionHooks
             state.InFlight = false;
             state.Pending = null;
             state.OpportunityId++;
-            state.LastMessage = "获得一次路灯机会。选择遗物投入，或放弃。";
+            state.LastMessage = "选择遗物投入，或放弃。";
         }
         state.Revision++;
     }
@@ -25,6 +26,7 @@ public static class RavenSessionHooks
     public static void EndOpportunity(RavenState state, string message)
     {
         if (state.HasOpportunity) state.PendingLights.RemoveAt(0);
+        state.EndedBySwallow = false;
         state.BonusCandidates.Clear();
         state.Pending = null;
         state.IsActive = false;

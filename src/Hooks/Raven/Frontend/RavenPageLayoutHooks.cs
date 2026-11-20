@@ -20,6 +20,19 @@ internal static class RavenPageLayoutHooks
     internal static float? InventoryTop(Control panel, Control? inventory) =>
         VisibleBounds(panel, inventory, allowEmptyHeight: true) is { } bounds ? Math.Max(0, bounds.Position.Y) : null;
 
+    internal static float? RelicBottom(Control panel, Control hud, IEnumerable<Control?> relics)
+    {
+        var toHud = hud.GetGlobalTransformWithCanvas().AffineInverse();
+        float? bottom = null;
+        foreach (var relic in relics)
+        {
+            if (VisibleBounds(panel, relic) is null) continue;
+            var bounds = (toHud * relic!.GetGlobalTransformWithCanvas()) * new Rect2(Vector2.Zero, relic.Size);
+            bottom = Math.Max(bottom ?? float.NegativeInfinity, bounds.End.Y);
+        }
+        return bottom;
+    }
+
     internal static float TopBarBottom(Control panel, IEnumerable<Control?> controls)
     {
         float? bottom = null;
@@ -78,5 +91,12 @@ internal sealed partial class RavenLampPanelHooks
     {
         if (_closed || !IsInsideTree()) return;
         RavenPageLayoutHooks.Apply(_pageRoot, Size, RavenPageLayoutHooks.NativeTop(this));
+        if (_stage is not { Hud: var hud } || !hud.IsInsideTree()) return;
+        var inventory = NRun.Instance?.GlobalUi?.RelicInventory;
+        var bottom = inventory is not null && GodotObject.IsInstanceValid(inventory) && inventory.IsVisibleInTree()
+            ? RavenPageLayoutHooks.RelicBottom(this, hud, inventory.RelicNodes.Select(holder =>
+                GodotObject.IsInstanceValid(holder) && !holder.IsQueuedForDeletion() ? holder.Relic?.Icon : null))
+            : null;
+        hud.PlaceInfoBelowRelics(bottom);
     }
 }

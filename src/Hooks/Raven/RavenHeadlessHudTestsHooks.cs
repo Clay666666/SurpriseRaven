@@ -45,7 +45,7 @@ internal static partial class RavenOverlayHooks
             CheckHud(message.Visible && message.Text.Contains("移除"), "A missing original retains its exception message.");
             hud.SetInfo(0, 0, true);
             var endedNodes = HudNodes(hud).ToList();
-            CheckHud(endedNodes.OfType<Label>().Any(label => label.Text == "渡鸦路灯 · 机会已结束"),
+            CheckHud(endedNodes.OfType<Label>().Any(label => label.Text == "渡鸦路灯已结束"),
                 "Ended HUD retains its status message.");
             CheckHud(!endedNodes.OfType<Control>().Any(control => HasPercentage(control.TooltipText))
                 && !endedNodes.OfType<Label>().Any(label => HasPercentage(label.Text)), "Ended HUD exposes no odds percentage.");

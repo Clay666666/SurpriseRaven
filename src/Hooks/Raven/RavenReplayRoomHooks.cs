@@ -95,17 +95,11 @@ internal static partial class RavenReplayRoomHooks
             || !ReferenceEquals(session.Restored.CurrentRoom, session.Room)) return;
         try
         {
-            if (!session.RequestedMap)
-            {
-                session.RequestedMap = true;
-                map.Open(); // The stable map gate holds this request until all opportunities finish.
-            }
-            if (RavenServiceHooks.State.HasOpportunity)
-            {
-                if (!RavenMapGateHooks.HasDeferredMap || !RavenOverlayHooks.ReplayPanelMounted) return;
-            }
-            else if (!map.IsOpen && !(RavenMapGateHooks.HasDeferredMap && RavenOverlayHooks.ReplayPanelMounted)) return;
-            session.SignalReady();
+            // A terminal replay must hold the map even before an overlay can enter the tree.
+            session.RequestContinuation(() => map.Open(), () => RavenMapGateHooks.Defer(map, false), RavenOverlayHooks.ShowResult);
+            if (!session.CompleteContinuation(RavenServiceHooks.State.HasOpportunity,
+                    map.IsOpen, RavenMapGateHooks.HasDeferredMap, RavenOverlayHooks.ReplayPanel)) return;
+            if (session.SwallowResult is not null) Logger.Log("[Raven] Restored the extinguished lamp result.");
             Logger.Log("[Raven] Restored lamp source and map continuation without offering room loot again.");
         }
         catch (Exception error)
@@ -127,6 +121,8 @@ internal static partial class RavenReplayRoomHooks
 
 internal static partial class RavenOverlayHooks
 {
-    internal static bool ReplayPanelMounted => _panel is { } panel && GodotObject.IsInstanceValid(panel)
+    internal static RavenLampPanelHooks? ReplayPanel => _panel;
+
+    internal static bool IsMounted(RavenLampPanelHooks? panel) => panel is not null && GodotObject.IsInstanceValid(panel)
         && panel.IsInsideTree() && panel.IsVisibleInTree() && !panel.IsQueuedForDeletion();
 }
