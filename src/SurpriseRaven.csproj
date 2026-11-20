@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Config/gameplay-odds.json" LogicalName="SurpriseRaven.Config.gameplay-odds.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="STS2.RitsuLib.Compat.0.111.0" Version="[0.6.14]" IncludeAssets="compile" PrivateAssets="all" />
     <!-- Use the actual game assembly below instead of the transitive package. -->
     <PackageReference Include="GodotSharp" Version="[4.5.1]" ExcludeAssets="all" PrivateAssets="all" />

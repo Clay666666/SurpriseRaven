@@ -312,6 +312,7 @@ try {
         Install-StagedPayload $result $mainSpec
         return
     }
+
     $sourceIdentity = Get-SourceIdentity $projectRoot
     if (-not $BuildOnly -and -not $sourceIdentity.Clean) { throw 'Commit source changes before deployment, or use -BuildOnly.' }
     Assert-ChildPath $runRoot $artifactsRoot | Out-Null
@@ -335,6 +336,8 @@ try {
     $payloads = @()
     Push-Location $projectRoot
     try {
+        Invoke-LoggedCommand $dotnetExe @('run', '--project', (Join-Path $PSScriptRoot 'gameplay-odds\CheckGameplayOdds.csproj'),
+            '--configuration', 'Release', '--', (Join-Path $projectRoot 'src\Config\gameplay-odds.json')) (Join-Path $runRoot 'gameplay-odds.log')
         foreach ($spec in $specs) {
             $compileApi = if ($spec.Id -eq $mainSpec.Id) { $baselineGame.ApiTarget } else { $targetGame.ApiTarget }
             $compileGame = if ($spec.Id -eq $mainSpec.Id) { $baselineGame.Directory } else { $GameDir }

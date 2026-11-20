@@ -9,34 +9,6 @@ public static class RavenRulesHooks
 {
     // Explicit compatibility registry: the game has no Quest flag for relics.
     private static readonly HashSet<string> ExcludedIds = new(StringComparer.Ordinal);
-    // Rows are 0–6 lights. Columns follow RavenOutcome in order, including Keep.
-    private static readonly int[][] CommonWeights =
-    [
-        [5, 40, 55, 0, 0, 0], [7, 48, 45, 0, 0, 0], [9, 54, 37, 0, 0, 0],
-        [11, 59, 30, 0, 0, 0], [13, 62, 25, 0, 0, 0], [15, 66, 19, 0, 0, 0],
-        [17, 70, 13, 0, 0, 0]
-    ];
-
-    private static readonly int[][] UncommonWeights =
-    [
-        [6, 40, 52, 2, 0, 0], [8, 44, 42, 6, 0, 0], [10, 50, 32, 8, 0, 0],
-        [12, 54, 24, 10, 0, 0], [14, 58, 18, 10, 0, 0], [16, 60, 14, 10, 0, 0],
-        [18, 65, 10, 7, 0, 0]
-    ];
-
-    private static readonly int[][] RareWeights =
-    [
-        [8, 30, 40, 18, 4, 0], [12, 32, 40, 10, 6, 0], [14, 36, 35, 8, 7, 0],
-        [16, 40, 31, 5, 8, 0], [18, 42, 26, 5, 9, 0], [20, 45, 20, 5, 10, 0],
-        [25, 50, 8, 5, 12, 0]
-    ];
-
-    private static readonly int[][] AncientWeights =
-    [
-        [0, 0, 0, 30, 6, 64], [0, 0, 0, 32, 8, 60], [0, 0, 0, 34, 8, 58],
-        [0, 0, 0, 36, 9, 55], [0, 0, 0, 38, 9, 53], [0, 0, 0, 40, 10, 50],
-        [0, 0, 0, 40, 12, 48]
-    ];
 
     public static void RegisterExcludedRelic(string modelId) => ExcludedIds.Add(modelId);
     public static bool IsExcluded(RelicModel relic) =>
@@ -46,14 +18,6 @@ public static class RavenRulesHooks
     public static int[] GetOdds(int lights) => GetWeightRow(lights, RelicRarity.Uncommon)[..5];
 
     public static int[] GetWeights(int lights, RelicRarity rarity) => (int[])GetWeightRow(lights, rarity).Clone();
-
-    internal static Dictionary<string, int[][]> DefaultOutcomes() => new(StringComparer.Ordinal)
-    {
-        [nameof(RelicRarity.Common)] = CommonWeights,
-        [nameof(RelicRarity.Uncommon)] = UncommonWeights,
-        [nameof(RelicRarity.Rare)] = RareWeights,
-        [nameof(RelicRarity.Ancient)] = AncientWeights
-    };
 
     private static int[] GetWeightRow(int lights, RelicRarity rarity) => RavenGameplayOddsHooks.Row(Tier(rarity), lights);
 

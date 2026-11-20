@@ -58,6 +58,9 @@ opencode.jsonc
 !/tools/api-compat/*.ps1
 /tools/api-compat/**/bin/
 /tools/api-compat/**/obj/
+!/tools/gameplay-odds/
+!/tools/gameplay-odds/*.cs
+!/tools/gameplay-odds/*.csproj
 
 # STS2MenuControl (cloned from GitHub at install time)
 /tools/STS2MenuControl/

@@ -67,7 +67,7 @@ public static partial class RavenHeadlessTestsHooks
         RavenSessionHooks.Enqueue(state, 5, "room-a");
         Check(state.PendingLights.SequenceEqual([2, 5]), "Batch acquisition merged independent opportunities.");
         Check(state.Lights == 2 && state.Round == 0 && !state.IsActive, "First offer initial state differs.");
-        RavenSessionHooks.CompleteRound(state, 49);
+        RavenSessionHooks.ApplyRound(state, 3);
         Check(state.Lights == 3 && state.Round == 1 && state.IsActive, "Round did not light and activate.");
         Check(state.PendingLights[1] == 5, "Current round changed the next offer's initial lights.");
         state.BonusCandidates.Add(new SerializableRelic());
@@ -75,8 +75,8 @@ public static partial class RavenHeadlessTestsHooks
         Check(state.PendingLights.SequenceEqual([5]) && state.Lights == 5 && state.Round == 0,
             "Exit failed to advance to the next independent offer.");
         Check(!state.IsActive && state.BonusCandidates.Count == 0, "Exit retained active reward choice.");
-        RavenSessionHooks.CompleteRound(state, 0);
-        RavenSessionHooks.CompleteRound(state, 0);
+        RavenSessionHooks.ApplyRound(state, 6);
+        RavenSessionHooks.ApplyRound(state, 6);
         Check(state.Lights == 6 && state.Round == 2 && state.HasOpportunity,
             "Six lights terminated a surviving opportunity.");
         RavenSessionHooks.Expire(state, "离开房间");
