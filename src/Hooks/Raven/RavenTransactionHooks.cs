@@ -102,7 +102,7 @@ internal static partial class RavenTransactionHooks
     }
 
     internal static string SwallowMessage(RavenPendingRound pending) =>
-        $"渡鸦带走了 {pending.StakeTitle}，本次渡鸦路灯结束。";
+        $"渡鸦带走了 {pending.StakeTitle}。";
 
     internal static void Abandon(RavenState state)
     {
