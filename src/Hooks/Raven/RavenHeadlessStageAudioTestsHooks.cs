@@ -141,7 +141,7 @@ internal static partial class RavenOverlayHooks
             stage.OnCue(RavenCue.Drop, downgrade);
             Check(audio.Count == 0, "A real downgrade does not start the swap lead when its reward appears.");
             stage.OnCue(RavenCue.Reveal, downgrade);
-            Check(stage.Hud.PopLabel.Text == "物品降档" && audio.SequenceEqual(["result.downgrade"]),
+            Check(stage.Hud.PopLabel.Text == "遗物降档" && audio.SequenceEqual(["result.downgrade"]),
                 "An Uncommon-to-Common downgrade retains its message and reveal voice.");
             foreach (var outcome in Enum.GetValues<RavenOutcome>())
             {

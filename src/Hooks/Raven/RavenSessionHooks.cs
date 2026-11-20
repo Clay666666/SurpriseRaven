@@ -18,7 +18,7 @@ public static class RavenSessionHooks
             state.InFlight = false;
             state.Pending = null;
             state.OpportunityId++;
-            state.LastMessage = "获得一次路灯机会。选择遗物投入，或放弃。";
+            state.LastMessage = "选择遗物投入，或放弃。";
         }
         state.Revision++;
     }

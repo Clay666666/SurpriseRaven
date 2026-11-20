@@ -107,7 +107,7 @@ internal sealed partial class RavenHudHooks : Control
 
     internal void SetInfo(int round, int lights, bool ended)
     {
-        _info.Text = ended ? "渡鸦路灯 · 机会已结束" : $"第 {round + 1} 轮";
+        _info.Text = ended ? "渡鸦路灯已结束" : $"第 {round + 1} 轮";
         _panel.ResetSize();
     }
 

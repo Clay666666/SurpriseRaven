@@ -50,9 +50,9 @@ internal sealed partial class RavenStageHooks
 
     internal static (string, Color) PopText(RavenRoundPlan plan) => plan.DisplayOutcome switch
     {
-        RavenOutcome.Upgrade => ("升值成功", Gold),
+        RavenOutcome.Upgrade => ("遗物升档", Gold),
         RavenOutcome.Swap => ("等价互换", new Color(0.65f, 0.82f, 0.95f)),
-        RavenOutcome.Downgrade => ("物品降档", new Color(0.75f, 0.68f, 0.9f)),
+        RavenOutcome.Downgrade => ("遗物降档", new Color(0.75f, 0.68f, 0.9f)),
         RavenOutcome.Bonus => ("奖励三选一!!!", new Color(0.75f, 0.68f, 0.9f)),
         _ => ("原件返还", Cream)
     };
@@ -65,7 +65,7 @@ internal sealed partial class RavenStageHooks
             { Outcome: RavenOutcome.Bonus, OriginalReturn: not null, Rewards.Count: 0 } => "取回原件",
             { Outcome: RavenOutcome.Bonus, OriginalReturn: not null } => "取回原件，并任选一件奖励",
             { Outcome: RavenOutcome.Bonus } => "任选一件奖励",
-            _ => "点击或按 F 领取遗物"
+            _ => "点击领取遗物"
         };
         return action + " · 离开将放弃未领取的遗物";
     }

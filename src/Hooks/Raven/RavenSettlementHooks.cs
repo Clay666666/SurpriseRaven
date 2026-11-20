@@ -45,10 +45,10 @@ public static partial class RavenServiceHooks
             if (result == RavenClaimResult.Claimed)
             {
                 state.LastMessage = pending.Shortage is not null ? pending.Notice!
-                    : pending.Outcome == RavenOutcome.Keep ? "原件保留，可以继续投入或退出。"
+                    : pending.Outcome == RavenOutcome.Keep ? "继续投入或退出。"
                     : pending.Outcome == RavenOutcome.Bonus
                         ? $"额外获得 {candidate!.Title.GetFormattedText()}。" + (pending.OriginalState == RavenOriginalState.Pending ? "原件仍待取回。" : "原件已处理。")
-                        : $"{pending.StakeTitle} → {candidate!.Title.GetFormattedText()}。可以继续投入或退出。";
+                        : $"{pending.StakeTitle} → {candidate!.Title.GetFormattedText()}。继续投入或退出。";
                 Logger.Log($"[Raven] Claimed {pending.Outcome}: {candidate?.Id.ToString() ?? pending.StakeId}.");
             }
             else if (result == RavenClaimResult.Invalidated)
